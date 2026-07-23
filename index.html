@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>シャドバWB - トランプ風総合戦績ノート </title>
+  
+  <!-- 📱 アプリ化（PWA）用の設定 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="シャドバWB">
+
+  <!-- 👑 金枠×黒×ゴールドスペードアイコン -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%2308100a%22/><rect x=%225%22 y=%225%22 width=%2290%22 height=%2290%22 rx=%2222%22 fill=%22none%22 stroke=%22%23d4af37%22 stroke-width=%222.5%22/><text x=%2250%25%22 y=%2258%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2260%22 fill=%22%23d4af37%22>♠</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%2308100a%22/><rect x=%225%22 y=%225%22 width=%2290%22 height=%2290%22 rx=%2222%22 fill=%22none%22 stroke=%22%23d4af37%22 stroke-width=%222.5%22/><text x=%2250%25%22 y=%2258%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2260%22 fill=%22%23d4af37%22>♠</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Shippori+Mincho:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #08100a;
+      --card-bg: #fefdfa;
+      --text-main: #2b2b2b;
+      --spade-black: #1a1a1a;
+      --heart-red: #c82828;
+      --gold-accent: #d4af37;
+      --gold-dark: #997b19;
+      --border-color: #e2d9cc;
+      --font-family: 'Shippori Mincho', 'Georgia', serif;
+      --font-family-en: 'Cinzel', serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-family); }
+
+    body {
+      background: radial-gradient(circle at center, #122417 0%, #060c07 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      padding: 12px 10px;
+      min-height: 100vh;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    .auth-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(253, 251, 247, 0.08); backdrop-filter: blur(8px);
+      border: 1px solid var(--gold-accent); padding: 10px 14px; border-radius: 8px;
+      margin-bottom: 15px; color: #fff; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .auth-btn {
+      background: linear-gradient(135deg, #d4af37, #b38f20); color: #000;
+      border: none; padding: 6px 14px; border-radius: 4px; font-weight: bold;
+      cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    header { text-align: center; color: var(--card-bg); margin-bottom: 18px; padding: 5px 0; }
+    header h1 { font-family: var(--font-family-en); font-size: 1.8rem; font-weight: 900; letter-spacing: 3px; color: #fff8eb; text-shadow: 0 2px 6px rgba(0,0,0,0.8); }
+    .suits-decor { font-family: var(--font-family-en); font-size: 0.95rem; letter-spacing: 2px; color: var(--gold-accent); margin-top: 4px; }
+
+    .book-tabs { display: flex; gap: 6px; margin-bottom: 15px; border-bottom: 2px solid var(--gold-accent); overflow-x: auto; }
+    .tab-btn {
+      background: rgba(253, 251, 247, 0.12); color: var(--card-bg); border: 1px solid var(--gold-accent);
+      border-bottom: none; padding: 10px 14px; font-size: 0.85rem; font-weight: 600;
+      border-top-left-radius: 8px; border-top-right-radius: 8px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
+    .tab-btn.active { background: var(--card-bg); color: var(--spade-black); font-weight: 800; }
+
+    .page-content { display: none; }
+    .page-content.active { display: block; }
+
+    .trump-card {
+      background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 18px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6), inset 0 0 0 2px var(--gold-accent); position: relative;
+    }
+
+    h2 { font-size: 1.15rem; font-weight: 800; border-bottom: 2px solid var(--gold-accent); padding-bottom: 6px; margin-bottom: 14px; color: var(--spade-black); display: flex; align-items: center; gap: 6px; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+    .form-section-title { grid-column: 1 / -1; font-size: 0.82rem; font-weight: bold; color: var(--gold-dark); border-bottom: 1px dashed var(--gold-accent); padding-bottom: 2px; margin-top: 6px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 3px; }
+    label { font-size: 0.78rem; font-weight: 600; color: #333; }
+    select, input, textarea { padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; font-size: 15px; outline: none; width: 100%; color: #222; }
+    select:focus, input:focus, textarea:focus { border-color: var(--gold-accent); box-shadow: 0 0 6px rgba(212, 175, 55, 0.4); }
+
+    .btn {
+      font-family: var(--font-family-en), var(--font-family); background: linear-gradient(135deg, #2b2b2b, #111111);
+      color: var(--gold-accent); border: 1px solid var(--gold-accent); padding: 12px; font-weight: 700;
+      font-size: 0.95rem; border-radius: 6px; cursor: pointer; margin-top: 12px; width: 100%; letter-spacing: 1.5px;
+    }
+    .btn:active { transform: scale(0.98); background: var(--gold-accent); color: #000; }
+
+    .radio-group { display: flex; gap: 6px; }
+    .radio-btn { flex: 1; text-align: center; }
+    .radio-btn input { display: none; }
+    .radio-btn label { display: block; padding: 8px; background: #eee; border-radius: 6px; cursor: pointer; border: 1px solid #ccc; font-weight: 700; }
+    .radio-btn input:checked + label.win { background: var(--heart-red); color: white; border-color: var(--heart-red); }
+    .radio-btn input:checked + label.lose { background: #4a5568; color: white; border-color: #4a5568; }
+
+    .gm-toggle-wrapper { margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; background: rgba(212, 175, 55, 0.1); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.4); }
+    .checkbox-group input { width: 16px; height: 16px; accent-color: var(--gold-dark); }
+    .gm-container { display: none; margin-top: 8px; padding: 10px; background: rgba(212, 175, 55, 0.08); border-radius: 8px; border: 1px solid var(--gold-accent); }
+    .gm-container.active { display: block; }
+
+    /* 大会2デッキ用コンテナ */
+    .second-deck-container { display: none; margin-top: 8px; }
+    .second-deck-container.active { display: block; }
+
+    .rate-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; margin-top: 8px; }
+    .rate-card { background: rgba(212, 175, 55, 0.08); border: 1px solid var(--gold-accent); border-radius: 8px; padding: 6px; text-align: center; }
+    .rate-card .class-name { font-size: 0.72rem; font-weight: 600; }
+    .rate-card .rate-val { font-family: var(--font-family-en); font-size: 0.95rem; font-weight: 700; color: var(--heart-red); }
+    .rate-card .rate-delta { font-size: 0.72rem; font-weight: 700; margin-top: 2px; }
+    .rate-card .delta-up { color: #2e7d32; }
+    .rate-card .delta-down { color: #c62828; }
+    .rate-card .delta-zero { color: #666; }
+    .rate-summary, .stats-summary { margin: 8px 0 10px; padding: 8px 10px; border: 1px solid rgba(212, 175, 55, 0.35); background: rgba(212, 175, 55, 0.08); border-radius: 8px; font-size: 0.82rem; color: #444; }
+    .rate-summary strong, .stats-summary strong { color: var(--spade-black); }
+    .stats-summary .stat-pill { display: inline-block; padding: 2px 6px; margin: 2px 2px 0 0; border-radius: 999px; background: rgba(255,255,255,0.7); border: 1px solid rgba(212, 175, 55, 0.3); }
+
+    .table-wrapper { overflow-x: auto; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; white-space: nowrap; }
+    th, td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--border-color); }
+    th { background-color: rgba(212, 175, 55, 0.15); font-weight: 600; }
+    .win-rate-high { color: var(--heart-red); font-weight: 700; }
+    .win-rate-low { color: #4a5568; font-weight: 700; }
+
+    .history-list { max-height: 320px; overflow-y: auto; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; border-bottom: 1px dashed var(--border-color); font-size: 0.8rem; }
+    .badge { font-family: var(--font-family-en); padding: 2px 5px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; color: white; }
+    .badge-win { background-color: var(--heart-red); }
+    .badge-lose { background-color: #4a5568; }
+    .tag-badge { background: #e2d9cc; color: #333; font-size: 0.68rem; padding: 1px 4px; border-radius: 3px; margin-left: 2px; }
+    
+    .action-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 2px 4px; }
+    .delete-btn { color: #999; }
+    .edit-btn { color: var(--gold-dark); }
+
+    /* アップデート情報用スタイル */
+    .update-log-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .update-log-item { background: rgba(212, 175, 55, 0.05); border-left: 3px solid var(--gold-accent); padding: 8px 12px; border-radius: 4px; }
+    .update-date { font-family: var(--font-family-en); font-size: 0.75rem; color: var(--gold-dark); font-weight: bold; display: block; margin-bottom: 2px; }
+
+    /* モーダル共通 */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: #fff; border: 2px solid var(--gold-accent); border-radius: 12px; width: 92%; max-width: 500px; padding: 16px; max-height: 90vh; overflow-y: auto; }
+
+    /* フッター */
+    footer {
+      margin-top: 30px;
+      padding: 18px 12px;
+      background: rgba(0, 0, 0, 0.5);
+      border-top: 1px solid var(--gold-accent);
+      color: #b0b0b0;
+      font-size: 0.75rem;
+      border-radius: 8px;
+    }
+    .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 12px; }
+    .footer-section h3 { font-size: 0.85rem; color: var(--gold-accent); margin-bottom: 6px; font-weight: bold; }
+    .footer-section a { color: #d4af37; text-decoration: none; }
+    .footer-section a:hover { text-decoration: underline; }
+    .footer-disclaimer { border-top: 1px solid rgba(212, 175, 55, 0.2); padding-top: 10px; font-size: 0.7rem; color: #888; line-height: 1.4; text-align: center; }
+
+    @media (max-width: 600px) {
+      body { padding: 6px 4px; }
+      header h1 { font-size: 1.4rem; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="auth-bar">
+    <div id="userInfo">読み込み中...</div>
+    <button id="authBtn" class="auth-btn" onclick="toggleAuth()">ログイン</button>
+  </div>
+
+  <header>
+    <h1>SHADOWVERSE WB</h1>
+    <div class="suits-decor">♠ ♥ RECORD & NOTEBOOK ♦ ♣</div>
+  </header>
+
+  <div class="book-tabs">
+    <button class="tab-btn active" onclick="switchPage('page-stats', this)">📖 1章: ランク戦</button>
+    <button class="tab-btn" onclick="switchPage('page-tournaments', this)">🏆 2章: 大会戦績</button>
+    <button class="tab-btn" onclick="switchPage('page-decks', this)">🃏 3章: デッキノート</button>
+    <button class="tab-btn" onclick="switchPage('page-updates', this)">📢 アップデート情報</button>
+  </div>
+
+  <!-- ==================== 第1章: ランク戦ログ ==================== -->
+  <div id="page-stats" class="page-content active">
+
+    <div class="trump-card">
+      <h2><span style="color: var(--heart-red);">♥</span> ランク戦記録</h2>
+      <form id="matchForm">
+        <div class="form-grid">
+          
+          <div class="form-section-title">📌 自分の環境・使用デッキ設定（自動保存）</div>
+
+          <div class="form-group">
+            <label for="formatInput">フォーマット</label>
+            <select id="formatInput">
+              <option value="ローテーション">ローテーション</option>
+              <option value="アンリミテッド">アンリミテッド</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="seasonInput">シーズン名</label>
+            <input type="text" id="seasonInput" placeholder="例: 第1弾環境" list="seasonHistory" required>
+            <datalist id="seasonHistory"></datalist>
+          </div>
+
+          <div class="form-group">
+            <label for="myClass">自分のクラス</label>
+            <select id="myClass" required>
+              <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
+              <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="myType">自分のデッキタイプ（選択・自由入力）</label>
+            <input type="text" id="myType" placeholder="選択肢から選ぶか入力" list="myDeckTypeHistory" required>
+            <datalist id="myDeckTypeHistory"></datalist>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="myTag">サブタグ (任意)</label>
+            <input type="text" id="myTag" placeholder="例: Ver1.1, 構築A">
+          </div>
+
+          <!-- グループ選択（通常時のみ表示） -->
+          <div class="form-group" id="gemField">
+            <label for="gemClass">グループ</label>
+            <select id="gemClass">
+              <option value="">指定なし</option>
+              <option value="ダイヤモンド">ダイヤモンド</option>
+              <option value="サファイア">サファイア</option>
+              <option value="ルビー">ルビー</option>
+              <option value="トパーズ">トパーズ</option>
+              <option value="エメラルド">エメラルド</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="rankField">
+            <label for="userRank">ランク帯</label>
+            <select id="userRank">
+              <option value="マスター3">マスター3</option><option value="マスター2">マスター2</option><option value="マスター1">マスター1</option>
+              <option value="マスター0" selected>マスター0</option>
+              <option value="AA3">AA3</option><option value="AA2">AA2</option><option value="AA1">AA1</option><option value="AA0">AA0</option>
+              <option value="A3">A3</option><option value="A2">A2</option><option value="A1">A1</option><option value="A0">A0</option>
+            </select>
+          </div>
+
+          <div class="form-section-title">⚔️ 対戦相手の情報（毎試合選択）</div>
+
+          <div class="form-group">
+            <label for="oppClass">相手のクラス</label>
+            <select id="oppClass" required>
+              <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
+              <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="oppType">相手のデッキタイプ（選択・自由入力）</label>
+            <input type="text" id="oppType" placeholder="選択肢から選ぶか入力" list="oppDeckTypeHistory" required>
+            <datalist id="oppDeckTypeHistory"></datalist>
+          </div>
+
+          <div class="form-group">
+            <label for="turn">手番</label>
+            <select id="turn">
+              <option value="先攻">先攻 ♠</option>
+              <option value="後攻">後攻 ♣</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>勝敗</label>
+            <div class="radio-group">
+              <div class="radio-btn">
+                <input type="radio" id="win" name="result" value="WIN" checked>
+                <label for="win" class="win">WIN</label>
+              </div>
+              <div class="radio-btn">
+                <input type="radio" id="lose" name="result" value="LOSE">
+                <label for="lose" class="lose">LOSE</label>
+              </div>
+            </div>
+          </div>
+
+          <datalist id="tagHistory"></datalist>
+
+        </div>
+
+        <div class="gm-toggle-wrapper">
+          <label class="checkbox-group" for="isGM">
+            <input type="checkbox" id="isGM">
+            <span>グランドマスター（GM）として記録</span>
+          </label>
+
+          <div class="gm-container" id="gmContainer">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="gmGroup">グレード</label>
+                <select id="gmGroup">
+                  <option value=""></option>
+                  <option value="EPIC">EPIC</option>
+                  <option value="ULTIMATE">ULTIMATE</option>
+                  <option value="LEGEND">LEGEND</option>
+                  <option value="BEYOND">BEYOND</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="initialRate">GM初期レート</label>
+                <input type="number" id="initialRate" placeholder="例: 1600">
+              </div>
+              <div class="form-group">
+                <label for="rateChange">レート増減</label>
+                <input type="number" id="rateChange" placeholder="例: 16 や -16">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn">RECORD MATCH</button>
+      </form>
+    </div>
+
+    <div class="trump-card">
+      <h2><span style="color: var(--gold-accent);">♣</span> 各クラス GMレート（現在値）</h2>
+      <div class="rate-summary" id="rateSummary"></div>
+      <div class="rate-board" id="rateBoard"></div>
+    </div>
+
+    <div class="trump-card">
+      <h2><span style="color: var(--spade-black);">♠</span> 相性分析</h2>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 8px; font-size: 0.8rem; color: #666; align-items: center;">
+        <div>シーズン: <select id="filterSeason" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;"><option value="ALL">全シーズン</option></select></div>
+        <div>フォーマット: <select id="filterFormat" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;"><option value="ALL">すべて</option><option value="ローテーション">ローテ</option><option value="アンリミテッド">アンリミ</option></select></div>
+        <div>手番: 
+          <select id="filterTurn" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
+            <option value="ALL">すべて</option>
+            <option value="先攻">先攻</option>
+            <option value="後攻">後攻</option>
+          </select>
+        </div>
+        <div>サブタグ: <input type="text" id="filterTag" placeholder="すべて" list="tagHistory" style="padding: 2px 4px; font-size: 13px; width: 90px; display: inline-block;"></div>
+        <div>集計単位: 
+          <select id="groupByTag" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
+            <option value="false">アーキタイプ</option>
+            <option value="true">サブタグ</option>
+          </select>
+        </div>
+      </div>
+      <div id="statsSummary" class="stats-summary"></div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>自分</th>
+              <th>相手</th>
+              <th>数</th>
+              <th>勝敗</th>
+              <th>勝率</th>
+              <th>判定</th>
+            </tr>
+          </thead>
+          <tbody id="statsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="trump-card">
+      <h2><span style="color: var(--gold-accent);">♦</span> ログ履歴</h2>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+  </div>
+
+  <!-- ==================== 第2章: 大会戦績ノート ==================== -->
+  <div id="page-tournaments" class="page-content">
+    <div class="trump-card">
+      <h2>🏆 大会記録ノート</h2>
+      <form id="tourneyForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="tourneyDate">開催日</label>
+            <input type="date" id="tourneyDate" required>
+          </div>
+          <div class="form-group">
+            <label for="tourneyName">大会名</label>
+            <input type="text" id="tourneyName" placeholder="例: RAGE 2026 Spring" required>
+          </div>
+          <div class="form-group">
+            <label for="tourneyFormat">フォーマット</label>
+            <select id="tourneyFormat">
+              <option value="BO3">BO3</option>
+              <option value="BO1">BO1</option>
+              <option value="2Pick">2Pick</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tourneyResult">最終結果</label>
+            <input type="text" id="tourneyResult" placeholder="例: 予選5勝2敗 (Day2進出)" required>
+          </div>
+          
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="tourneyDeck1">使用デッキ 1（自由記述 or 3章から選択）</label>
+            <input type="text" id="tourneyDeck1" placeholder="直接入力するか、下の候補から選択" list="deckLibraryList" required>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="checkbox-group" for="isMultiDeck" style="width: fit-content;">
+              <input type="checkbox" id="isMultiDeck">
+              <span>2デッキ制の大会にする（もう1つ追加）</span>
+            </label>
+          </div>
+
+          <div class="form-group second-deck-container" id="secondDeckContainer" style="grid-column: 1 / -1;">
+            <label for="tourneyDeck2">使用デッキ 2（自由記述 or 3章から選択）</label>
+            <input type="text" id="tourneyDeck2" placeholder="2つ目のデッキ名や構成" list="deckLibraryList">
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="tourneyMemo">メモ・振り返り</label>
+            <textarea id="tourneyMemo" rows="3" placeholder="予選の反省点や調整メモ..."></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn">SAVE TOURNAMENT LOG</button>
+      </form>
+    </div>
+
+    <div class="trump-card">
+      <h2>📜 大会参加履歴</h2>
+      <div class="history-list" id="tourneyList"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 第3章: デッキノート ==================== -->
+  <div id="page-decks" class="page-content">
+    <div class="trump-card">
+      <h2>🃏 デッキ保存・ライブラリ</h2>
+      <form id="deckForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="deckTitle">デッキ名</label>
+            <input type="text" id="deckTitle" placeholder="例: 調整版破壊ネメシス" required>
+          </div>
+          <div class="form-group">
+            <label for="deckClass">クラス</label>
+            <select id="deckClass">
+              <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
+              <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="deckCode">デッキコード / 発行コード</label>
+            <input type="text" id="deckCode" placeholder="例: 4桁コードやポータルURL">
+          </div>
+          <div class="form-group">
+            <label for="deckImgUrl">デッキ画像URL</label>
+            <input type="url" id="deckImgUrl" placeholder="https://...">
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="deckMemo">デッキ解説・マリガン基準・回し方</label>
+            <textarea id="deckMemo" rows="4" placeholder="キープ基準: 先攻は○○、後攻は××..."></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn">SAVE DECK NOTE</button>
+      </form>
+    </div>
+
+    <div class="trump-card">
+      <h2>🃟 登録デッキ一覧</h2>
+      <div class="history-list" id="deckList"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 📢 アップデート情報 ==================== -->
+  <div id="page-updates" class="page-content">
+    <div class="trump-card">
+      <h2>📢 アップデート情報・更新履歴</h2>
+      <ul class="update-log-list">
+        <li class="update-log-item">
+          <span class="update-date">2026.07 (最新)</span>
+          <strong>大会戦績の表示レイアウト修正 & ラベル変更</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">スマホ表示時に開催日と大会名が重ならないようレイアウトを修正し、入力・表示の「開催日付」を「開催日」に変更しました。また、第1章の相性分析・ログへの先攻・後攻絞り込み機能を追加しました。</p>
+        </li>
+        <li class="update-log-item">
+          <span class="update-date">2026.07</span>
+          <strong>大会戦績の2デッキ選択・自由記述対応</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">第2章（大会戦績）に2デッキ制用の切り替えチェックボックスを追加し、第3章の登録デッキから選択または自由に文字入力できるよう改善しました。</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 📜 フッター（作成者・免責事項） ==================== -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-section">
+        <h3>👤 作成者情報・連絡先</h3>
+        <p style="margin-bottom: 4px;">開発・運営: <strong>おさかな</strong></p>
+        <p>不具合報告・ご要望は下記よりお願いいたします。</p>
+        <p style="margin-top: 6px;">
+          💬 X (旧Twitter): <a href="#" target="_blank" rel="noopener">@sakanayasan___</a><br>
+        </p>
+      </div>
+      <div class="footer-section">
+        <h3>ℹ️ アプリ仕様</h3>
+        <p>バージョン: Ver 1.6.4</p>
+        <p>対応機能: ランク戦績記録 / GMレート集計 / 大会戦績管理 / デッキライブラリ </p>
+      </div>
+    </div>
+    <div class="footer-disclaimer">
+      <p>⚠️ <strong>免責事項・権利表記</strong></p>
+      <p>当ウェブサイト（アプリ）は個人によって開発された<strong>非公式のファンツール</strong>であり、株式会社Cygamesおよび「Shadowverse / Shadowverse Worlds Beyond」の公式とは一切関係がありません。</p>
+      <p>本アプリ内で使用されているゲーム画像・商標・権利物の著作権および知的所有権は、各権利者に帰属します。</p>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ✏️ 1章：対戦修正用モーダル -->
+<div class="modal" id="editModal">
+  <div class="modal-content">
+    <h3 style="border-bottom:2px solid var(--gold-accent); padding-bottom:6px; margin-bottom:10px;">✏️ 戦績データの修正</h3>
+    <input type="hidden" id="editMatchId">
+    <input type="hidden" id="editIsGM">
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>自分のクラス</label>
+        <select id="editMyClass">
+          <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
+          <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>自分のデッキタイプ</label>
+        <input type="text" id="editMyType" list="editMyDeckTypeHistory">
+        <datalist id="editMyDeckTypeHistory"></datalist>
+      </div>
+      <div class="form-group">
+        <label>サブタグ</label>
+        <input type="text" id="editMyTag" list="tagHistory">
+      </div>
+      
+      <div class="form-group" id="editGemField">
+        <label>グループ</label>
+        <select id="editGemClass">
+          <option value="">指定なし</option>
+          <option value="ダイヤモンド">ダイヤモンド</option>
+          <option value="サファイア">サファイア</option>
+          <option value="ルビー">ルビー</option>
+          <option value="トパーズ">トパーズ</option>
+          <option value="エメラルド">エメラルド</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="editRateField" style="display:none;">
+        <label>レート増減</label>
+        <input type="number" id="editRateChange" placeholder="例: 16 や -16">
+      </div>
+
+      <div class="form-group">
+        <label>相手クラス</label>
+        <select id="editOppClass">
+          <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
+          <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>相手デッキタイプ</label>
+        <input type="text" id="editOppType" list="editOppDeckTypeHistory">
+        <datalist id="editOppDeckTypeHistory"></datalist>
+      </div>
+      <div class="form-group">
+        <label>手番</label>
+        <select id="editTurn"><option value="先攻">先攻</option><option value="後攻">後攻</option></select>
+      </div>
+      <div class="form-group">
+        <label>勝敗</label>
+        <select id="editResult"><option value="WIN">WIN</option><option value="LOSE">LOSE</option></select>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn" style="background:#4a5568; color:#fff;" onclick="closeModal('editModal')">キャンセル</button>
+      <button class="btn" onclick="saveMatchEdit()">更新保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✏️ 2章：大会修正用モーダル -->
+<div class="modal" id="editTourneyModal">
+  <div class="modal-content">
+    <h3 style="border-bottom:2px solid var(--gold-accent); padding-bottom:6px; margin-bottom:10px;">✏️ 大会ログの修正</h3>
+    <input type="hidden" id="editTourneyId">
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>開催日</label>
+        <input type="date" id="editTourneyDate" required>
+      </div>
+      <div class="form-group">
+        <label>大会名</label>
+        <input type="text" id="editTourneyName" required>
+      </div>
+      <div class="form-group">
+        <label>フォーマット</label>
+        <select id="editTourneyFormat">
+          <option value="BO3">BO3</option>
+          <option value="BO1">BO1</option>
+          <option value="2Pick">2Pick</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>最終結果</label>
+        <input type="text" id="editTourneyResult" required>
+      </div>
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label>使用デッキ 1</label>
+        <input type="text" id="editTourneyDeck1" list="deckLibraryList" required>
+      </div>
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label class="checkbox-group" for="editIsMultiDeck" style="width: fit-content;">
+          <input type="checkbox" id="editIsMultiDeck">
+          <span>2デッキ制の大会にする</span>
+        </label>
+      </div>
+      <div class="form-group second-deck-container" id="editSecondDeckContainer" style="grid-column: 1 / -1;">
+        <label>使用デッキ 2</label>
+        <input type="text" id="editTourneyDeck2" list="deckLibraryList">
+      </div>
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label>メモ・振り返り</label>
+        <textarea id="editTourneyMemo" rows="3"></textarea>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn" style="background:#4a5568; color:#fff;" onclick="closeModal('editTourneyModal')">キャンセル</button>
+      <button class="btn" onclick="saveTourneyEdit()">更新保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✏️ 3章：デッキノート修正用モーダル -->
+<div class="modal" id="editDeckModal">
+  <div class="modal-content">
+    <h3 style="border-bottom:2px solid var(--gold-accent); padding-bottom:6px; margin-bottom:10px;">✏️ デッキノートの修正</h3>
+    <input type="hidden" id="editDeckId">
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>デッキ名</label>
+        <input type="text" id="editDeckTitle" required>
+      </div>
+      <div class="form-group">
+        <label>クラス</label>
+        <select id="editDeckClass">
+          <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
+          <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>デッキコード</label>
+        <input type="text" id="editDeckCode">
+      </div>
+      <div class="form-group">
+        <label>デッキ画像URL</label>
+        <input type="url" id="editDeckImgUrl">
+      </div>
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label>デッキ解説・マリガン基準</label>
+        <textarea id="editDeckMemo" rows="4"></textarea>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn" style="background:#4a5568; color:#fff;" onclick="closeModal('editDeckModal')">キャンセル</button>
+      <button class="btn" onclick="saveDeckEdit()">更新保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 共有用datalist（3章のデッキから自動生成） -->
+<datalist id="deckLibraryList"></datalist>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBITsN4_c5qIdtaP0oc_UWz_qvhswDhncQ",
+    authDomain: "shadow-wb-app.firebaseapp.com",
+    projectId: "shadow-wb-app",
+    storageBucket: "shadow-wb-app.firebasestorage.app",
+    messagingSenderId: "912149579070",
+    appId: "1:912149579070:web:164b480474b19ea3d5586f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  let matches = [];
+  let tourneys = [];
+  let decks = [];
+  let unsubs = [];
+  const ALL_CLASSES = ['エルフ', 'ロイヤル', 'ウィッチ', 'ドラゴン', 'ナイトメア', 'ビショップ', 'ネメシス'];
+
+  const DEFAULT_DECK_TYPES = {
+    'エルフ': ['進化', 'テンポ'],
+    'ロイヤル': ['連携'],
+    'ウィッチ': ['魔手', '秘術', 'リンクル'],
+    'ドラゴン': ['ランプ'],
+    'ナイトメア': ['アグロ', 'ミッドレンジ', 'モード'],
+    'ビショップ': ['進化', '疾走'],
+    'ネメシス': ['破壊', 'AF', '人形', '疾走AF']
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+  const tourneyDateEl = document.getElementById('tourneyDate');
+  if (tourneyDateEl) tourneyDateEl.value = today;
+
+  const parseNumber = (val) => {
+    const num = parseInt(val, 10);
+    return isNaN(num) ? null : num;
+  };
+
+  const savedFields = ['formatInput', 'seasonInput', 'myClass', 'myType', 'myTag', 'gemClass', 'gmGroup', 'userRank', 'initialRate'];
+  function loadSavedInputs() {
+    savedFields.forEach(id => {
+      const savedVal = localStorage.getItem('swb_' + id);
+      if (savedVal !== null) {
+        const el = document.getElementById(id);
+        if (el) el.value = savedVal;
+      }
+    });
+    updateMyDeckDatalist();
+    updateOppDeckDatalist();
+  }
+  savedFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const saveValue = (e) => {
+        localStorage.setItem('swb_' + id, e.target.value);
+        if (id === 'myClass') updateMyDeckDatalist();
+      };
+      el.addEventListener('change', saveValue);
+      el.addEventListener('input', saveValue);
+    }
+  });
+
+  window.toggleAuth = () => {
+    if (currentUser) signOut(auth);
+    else signInWithPopup(auth, new GoogleAuthProvider()).catch(err => alert(err.message));
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    const userInfo = document.getElementById('userInfo');
+    const authBtn = document.getElementById('authBtn');
+    unsubs.forEach(u => u()); unsubs = [];
+
+    if (user) {
+      userInfo.innerHTML = `👤 <strong>${user.displayName}</strong>`;
+      authBtn.textContent = 'ログアウト';
+      listenData(user.uid);
+    } else {
+      userInfo.textContent = '🔒 未ログイン';
+      authBtn.textContent = 'ログイン';
+      matches = []; tourneys = []; decks = []; renderAll();
+    }
+  });
+
+  function listenData(uid) {
+    const qMatches = query(collection(db, "users", uid, "matches"), orderBy("createdAt", "desc"));
+    unsubs.push(onSnapshot(qMatches, (snap) => {
+      matches = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateDatalists();
+      renderAll();
+    }));
+
+    const qTourneys = query(collection(db, "users", uid, "tournaments"), orderBy("createdAt", "desc"));
+    unsubs.push(onSnapshot(qTourneys, (snap) => {
+      tourneys = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderTourneys();
+    }));
+
+    const qDecks = query(collection(db, "users", uid, "decks"), orderBy("createdAt", "desc"));
+    unsubs.push(onSnapshot(qDecks, (snap) => {
+      decks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateDatalists();
+      renderDecks();
+    }));
+  }
+
+  function updateMyDeckDatalist() {
+    const selectedClass = document.getElementById('myClass').value;
+    const types = new Set(DEFAULT_DECK_TYPES[selectedClass] || []);
+
+    decks.forEach(d => {
+      if (d.className === selectedClass && d.title) {
+        types.add(d.title);
+      }
+    });
+
+    matches.forEach(m => {
+      if (m.myClass === selectedClass && m.myType) types.add(m.myType);
+    });
+
+    document.getElementById('myDeckTypeHistory').innerHTML = Array.from(types).map(t => `<option value="${t}">`).join('');
+  }
+
+  function updateOppDeckDatalist(targetClass = null) {
+    const selClass = targetClass || document.getElementById('oppClass').value;
+    const types = new Set(DEFAULT_DECK_TYPES[selClass] || []);
+
+    decks.forEach(d => {
+      if (d.className === selClass && d.title) types.add(d.title);
+    });
+    matches.forEach(m => {
+      if (m.oppClass === selClass && m.oppType) types.add(m.oppType);
+    });
+
+    document.getElementById('oppDeckTypeHistory').innerHTML = Array.from(types).map(t => `<option value="${t}">`).join('');
+  }
+
+  document.getElementById('myClass').addEventListener('change', () => {
+    updateMyDeckDatalist();
+  });
+
+  document.getElementById('oppClass').addEventListener('change', () => {
+    updateOppDeckDatalist();
+  });
+
+  document.getElementById('editMyClass').addEventListener('change', (e) => {
+    const cls = e.target.value;
+    const types = new Set(DEFAULT_DECK_TYPES[cls] || []);
+    decks.forEach(d => { if (d.className === cls && d.title) types.add(d.title); });
+    document.getElementById('editMyDeckTypeHistory').innerHTML = Array.from(types).map(t => `<option value="${t}">`).join('');
+  });
+
+  document.getElementById('editOppClass').addEventListener('change', (e) => {
+    const cls = e.target.value;
+    const types = new Set(DEFAULT_DECK_TYPES[cls] || []);
+    decks.forEach(d => { if (d.className === cls && d.title) types.add(d.title); });
+    document.getElementById('editOppDeckTypeHistory').innerHTML = Array.from(types).map(t => `<option value="${t}">`).join('');
+  });
+
+  function updateDatalists() {
+    updateMyDeckDatalist();
+    updateOppDeckDatalist();
+
+    const deckNames = new Set();
+    decks.forEach(d => {
+      if (d.title) deckNames.add(`[${d.className}] ${d.title}`);
+      if (d.title) deckNames.add(d.title);
+    });
+    document.getElementById('deckLibraryList').innerHTML = Array.from(deckNames).map(n => `<option value="${n}">`).join('');
+
+    const tags = new Set();
+    matches.forEach(m => {
+      if (m.myTag) tags.add(m.myTag);
+    });
+
+    document.getElementById('tagHistory').innerHTML = Array.from(tags).map(t => `<option value="${t}">`).join('');
+  }
+
+  window.switchPage = (pageId, btn) => {
+    document.querySelectorAll('.page-content').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    btn.classList.add('active');
+  };
+
+  const isGM = document.getElementById('isGM');
+  isGM.addEventListener('change', () => {
+    const isChecked = isGM.checked;
+    document.getElementById('gmContainer').classList.toggle('active', isChecked);
+    document.getElementById('gemField').style.display = isChecked ? 'none' : 'flex';
+    document.getElementById('rankField').style.display = isChecked ? 'none' : 'flex';
+  });
+
+  const isMultiDeck = document.getElementById('isMultiDeck');
+  isMultiDeck.addEventListener('change', () => {
+    document.getElementById('secondDeckContainer').classList.toggle('active', isMultiDeck.checked);
+  });
+
+  const editIsMultiDeck = document.getElementById('editIsMultiDeck');
+  editIsMultiDeck.addEventListener('change', () => {
+    document.getElementById('editSecondDeckContainer').classList.toggle('active', editIsMultiDeck.checked);
+  });
+
+  document.getElementById('matchForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return alert("ログインが必要です！");
+
+    savedFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) localStorage.setItem('swb_' + id, el.value);
+    });
+
+    const initialRateInput = document.getElementById('initialRate');
+    const rateChangeInput = document.getElementById('rateChange');
+    const initialRateVal = parseNumber(initialRateInput.value);
+    const rateChangeVal = parseNumber(rateChangeInput.value);
+
+    try {
+      await addDoc(collection(db, "users", currentUser.uid, "matches"), {
+        createdAt: new Date(),
+        format: document.getElementById('formatInput').value,
+        season: document.getElementById('seasonInput').value.trim() || '未設定',
+        myClass: document.getElementById('myClass').value,
+        myType: document.getElementById('myType').value.trim(),
+        myTag: document.getElementById('myTag').value.trim(),
+        gemClass: isGM.checked ? "" : document.getElementById('gemClass').value,
+        oppClass: document.getElementById('oppClass').value,
+        oppType: document.getElementById('oppType').value.trim(),
+        turn: document.getElementById('turn').value,
+        result: document.querySelector('input[name="result"]:checked').value,
+        isGM: isGM.checked,
+        rank: isGM.checked ? `GM (${document.getElementById('gmGroup').value})` : document.getElementById('userRank').value,
+        initialRate: isGM.checked ? initialRateVal : null,
+        rateChange: isGM.checked ? (rateChangeVal !== null ? rateChangeVal : 0) : null,
+        date: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      });
+
+      // GMの場合、次回起動時の初期レートを「現在の値 + 増減」で計算して保存
+      if (isGM.checked && initialRateVal !== null && rateChangeVal !== null) {
+        const nextInitialRate = initialRateVal + rateChangeVal;
+        localStorage.setItem('swb_initialRate', nextInitialRate.toString());
+      }
+
+      document.getElementById('oppType').value = '';
+      document.getElementById('rateChange').value = '';
+      document.getElementById('win').checked = true;
+      alert("ランク戦ログを保存しました！");
+    } catch (err) { 
+      console.error(err);
+      alert("保存エラー: " + err.message); 
+    }
+  });
+
+  document.getElementById('tourneyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return alert("ログインが必要です！");
+
+    const deck1 = document.getElementById('tourneyDeck1').value.trim();
+    const useMulti = document.getElementById('isMultiDeck').checked;
+    const deck2 = useMulti ? document.getElementById('tourneyDeck2').value.trim() : '';
+
+    try {
+      await addDoc(collection(db, "users", currentUser.uid, "tournaments"), {
+        createdAt: new Date(),
+        date: document.getElementById('tourneyDate').value,
+        name: document.getElementById('tourneyName').value,
+        format: document.getElementById('tourneyFormat').value,
+        result: document.getElementById('tourneyResult').value,
+        deck1: deck1,
+        deck2: deck2,
+        isMultiDeck: useMulti,
+        memo: document.getElementById('tourneyMemo').value
+      });
+      document.getElementById('tourneyForm').reset();
+      document.getElementById('tourneyDate').value = today;
+      document.getElementById('secondDeckContainer').classList.remove('active');
+      alert("大会ログを保存しました！");
+    } catch (err) { alert("保存エラー: " + err.message); }
+  });
+
+  document.getElementById('deckForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return alert("ログインが必要です！");
+
+    try {
+      await addDoc(collection(db, "users", currentUser.uid, "decks"), {
+        createdAt: new Date(),
+        title: document.getElementById('deckTitle').value,
+        className: document.getElementById('deckClass').value,
+        code: document.getElementById('deckCode').value.trim(),
+        imgUrl: document.getElementById('deckImgUrl').value.trim(),
+        memo: document.getElementById('deckMemo').value
+      });
+      document.getElementById('deckForm').reset();
+      alert("デッキノートを保存しました！");
+    } catch (err) { alert("保存エラー: " + err.message); }
+  });
+
+  window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+
+  window.openEditModal = (id) => {
+    const m = matches.find(x => x.id === id);
+    if (!m) return;
+
+    document.getElementById('editMatchId').value = m.id;
+    document.getElementById('editIsGM').value = m.isGM ? 'true' : 'false';
+    document.getElementById('editMyClass').value = m.myClass || 'エルフ';
+    
+    const myCls = document.getElementById('editMyClass').value;
+    const myTypes = new Set(DEFAULT_DECK_TYPES[myCls] || []);
+    decks.forEach(d => { if (d.className === myCls && d.title) myTypes.add(d.title); });
+    document.getElementById('editMyDeckTypeHistory').innerHTML = Array.from(myTypes).map(t => `<option value="${t}">`).join('');
+    document.getElementById('editMyType').value = m.myType || '';
+    document.getElementById('editMyTag').value = m.myTag || '';
+
+    if (m.isGM) {
+      document.getElementById('editGemField').style.display = 'none';
+      document.getElementById('editRateField').style.display = 'flex';
+      document.getElementById('editRateChange').value = (m.rateChange !== undefined && m.rateChange !== null) ? m.rateChange : '';
+    } else {
+      document.getElementById('editGemField').style.display = 'flex';
+      document.getElementById('editRateField').style.display = 'none';
+      document.getElementById('editGemClass').value = m.gemClass || '';
+    }
+
+    document.getElementById('editOppClass').value = m.oppClass || 'エルフ';
+    
+    const oppCls = document.getElementById('editOppClass').value;
+    const oppTypes = new Set(DEFAULT_DECK_TYPES[oppCls] || []);
+    decks.forEach(d => { if (d.className === oppCls && d.title) oppTypes.add(d.title); });
+    document.getElementById('editOppDeckTypeHistory').innerHTML = Array.from(oppTypes).map(t => `<option value="${t}">`).join('');
+    document.getElementById('editOppType').value = m.oppType || '';
+    
+    document.getElementById('editTurn').value = m.turn || '先攻';
+    document.getElementById('editResult').value = m.result || 'WIN';
+    document.getElementById('editModal').classList.add('active');
+  };
+
+  window.saveMatchEdit = async () => {
+    const id = document.getElementById('editMatchId').value;
+    const isGMEdit = document.getElementById('editIsGM').value === 'true';
+    if (!currentUser || !id) return;
+
+    try {
+      const updateData = {
+        myClass: document.getElementById('editMyClass').value,
+        myType: document.getElementById('editMyType').value.trim(),
+        myTag: document.getElementById('editMyTag').value.trim(),
+        oppClass: document.getElementById('editOppClass').value,
+        oppType: document.getElementById('editOppType').value.trim(),
+        turn: document.getElementById('editTurn').value,
+        result: document.getElementById('editResult').value
+      };
+
+      if (isGMEdit) {
+        const rc = parseNumber(document.getElementById('editRateChange').value);
+        updateData.rateChange = rc !== null ? rc : 0;
+        updateData.gemClass = "";
+      } else {
+        updateData.gemClass = document.getElementById('editGemClass').value;
+        updateData.rateChange = null;
+      }
+
+      await updateDoc(doc(db, "users", currentUser.uid, "matches", id), updateData);
+      closeModal('editModal');
+    } catch (err) { alert("更新失敗: " + err.message); }
+  };
+
+  window.openEditTourneyModal = (id) => {
+    const t = tourneys.find(x => x.id === id);
+    if (!t) return;
+
+    document.getElementById('editTourneyId').value = t.id;
+    document.getElementById('editTourneyDate').value = t.date || today;
+    document.getElementById('editTourneyName').value = t.name || '';
+    document.getElementById('editTourneyFormat').value = t.format || 'BO3';
+    document.getElementById('editTourneyResult').value = t.result || '';
+    
+    document.getElementById('editTourneyDeck1').value = t.deck1 || t.deck || '';
+    document.getElementById('editTourneyDeck2').value = t.deck2 || '';
+    
+    const isMulti = !!t.isMultiDeck || !!t.deck2;
+    document.getElementById('editIsMultiDeck').checked = isMulti;
+    document.getElementById('editSecondDeckContainer').classList.toggle('active', isMulti);
+
+    document.getElementById('editTourneyMemo').value = t.memo || '';
+    document.getElementById('editTourneyModal').classList.add('active');
+  };
+
+  window.saveTourneyEdit = async () => {
+    const id = document.getElementById('editTourneyId').value;
+    if (!currentUser || !id) return;
+
+    const useMulti = document.getElementById('editIsMultiDeck').checked;
+
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid, "tournaments", id), {
+        date: document.getElementById('editTourneyDate').value,
+        name: document.getElementById('editTourneyName').value,
+        format: document.getElementById('editTourneyFormat').value,
+        result: document.getElementById('editTourneyResult').value,
+        deck1: document.getElementById('editTourneyDeck1').value.trim(),
+        deck2: useMulti ? document.getElementById('editTourneyDeck2').value.trim() : '',
+        isMultiDeck: useMulti,
+        memo: document.getElementById('editTourneyMemo').value
+      });
+      closeModal('editTourneyModal');
+    } catch (err) { alert("更新失敗: " + err.message); }
+  };
+
+  window.openEditDeckModal = (id) => {
+    const d = decks.find(x => x.id === id);
+    if (!d) return;
+
+    document.getElementById('editDeckId').value = d.id;
+    document.getElementById('editDeckTitle').value = d.title || '';
+    document.getElementById('editDeckClass').value = d.className || 'エルフ';
+    document.getElementById('editDeckCode').value = d.code || '';
+    document.getElementById('editDeckImgUrl').value = d.imgUrl || '';
+    document.getElementById('editDeckMemo').value = d.memo || '';
+    document.getElementById('editDeckModal').classList.add('active');
+  };
+
+  window.saveDeckEdit = async () => {
+    const id = document.getElementById('editDeckId').value;
+    if (!currentUser || !id) return;
+
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid, "decks", id), {
+        title: document.getElementById('editDeckTitle').value,
+        className: document.getElementById('editDeckClass').value,
+        code: document.getElementById('editDeckCode').value.trim(),
+        imgUrl: document.getElementById('editDeckImgUrl').value.trim(),
+        memo: document.getElementById('editDeckMemo').value
+      });
+      closeModal('editDeckModal');
+    } catch (err) { alert("更新失敗: " + err.message); }
+  };
+
+  window.deleteMatch = async (id) => { if (confirm('この戦績を削除しますか？') && currentUser) await deleteDoc(doc(db, "users", currentUser.uid, "matches", id)); };
+  window.deleteTourney = async (id) => { if (confirm('この大会ログを削除しますか？') && currentUser) await deleteDoc(doc(db, "users", currentUser.uid, "tournaments", id)); };
+  window.deleteDeck = async (id) => { if (confirm('このデッキノートを削除しますか？') && currentUser) await deleteDoc(doc(db, "users", currentUser.uid, "decks", id)); };
+
+  document.getElementById('filterSeason').addEventListener('change', renderAll);
+  document.getElementById('filterFormat').addEventListener('change', renderAll);
+  document.getElementById('filterTurn').addEventListener('change', renderAll);
+  document.getElementById('filterTag').addEventListener('input', renderAll);
+  document.getElementById('groupByTag').addEventListener('change', renderAll);
+
+  function renderAll() {
+    updateSeasonDropdown();
+    const season = document.getElementById('filterSeason').value;
+    const format = document.getElementById('filterFormat').value;
+    const turn = document.getElementById('filterTurn').value;
+    const tagFilter = document.getElementById('filterTag').value.trim();
+
+    let filtered = matches;
+    if (season !== 'ALL') filtered = filtered.filter(m => m.season === season);
+    if (format !== 'ALL') filtered = filtered.filter(m => m.format === format);
+    if (turn !== 'ALL') filtered = filtered.filter(m => m.turn === turn);
+    if (tagFilter !== '') filtered = filtered.filter(m => m.myTag === tagFilter);
+
+    renderGMRates(filtered);
+    renderStats(filtered);
+    renderHistory(filtered);
+  }
+
+  function updateSeasonDropdown() {
+    const seasons = [...new Set(matches.map(m => m.season))];
+    document.getElementById('seasonHistory').innerHTML = seasons.map(s => `<option value="${s}">`).join('');
+    const sel = document.getElementById('filterSeason');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="ALL">全シーズン</option>' + seasons.map(s => `<option value="${s}">${s}</option>`).join('');
+    sel.value = cur;
+  }
+
+  function renderGMRates(data) {
+    const board = document.getElementById('rateBoard');
+    const summary = document.getElementById('rateSummary');
+    board.innerHTML = '';
+    const rates = {}; const hasGM = {}; const deltas = {};
+    ALL_CLASSES.forEach(c => { rates[c] = 0; hasGM[c] = false; deltas[c] = 0; });
+
+    const latestByClass = {};
+    [...data].reverse().forEach(m => {
+      if (m.isGM && m.myClass && rates[m.myClass] !== undefined && !latestByClass[m.myClass]) {
+        latestByClass[m.myClass] = m;
+      }
+    });
+
+    ALL_CLASSES.forEach(c => {
+      const latest = latestByClass[c];
+      if (latest) {
+        hasGM[c] = true;
+        const baseRate = latest.initialRate !== null ? latest.initialRate : 0;
+        const rateChange = latest.rateChange !== null ? latest.rateChange : 0;
+        rates[c] = baseRate + rateChange;
+        deltas[c] = rateChange;
+      }
+    });
+
+    const hasAnyGM = ALL_CLASSES.some(c => hasGM[c]);
+    const totalRate = ALL_CLASSES.reduce((sum, c) => sum + (hasGM[c] ? rates[c] : 0), 0);
+    const totalDelta = ALL_CLASSES.reduce((sum, c) => sum + (hasGM[c] ? deltas[c] : 0), 0);
+    summary.innerHTML = hasAnyGM ? `最終合計レート: <strong>${totalRate}pt</strong>${totalDelta !== 0 ? ` (${totalDelta > 0 ? '+' : ''}${totalDelta}pt)` : ''}` : 'GMレートの記録がまだありません';
+
+    ALL_CLASSES.forEach(c => {
+      const deltaText = hasGM[c] ? `${deltas[c] > 0 ? '+' : ''}${deltas[c]}pt` : '';
+      const deltaClass = hasGM[c] ? (deltas[c] > 0 ? 'delta-up' : deltas[c] < 0 ? 'delta-down' : 'delta-zero') : 'delta-zero';
+      board.innerHTML += `<div class="rate-card"><div class="class-name">${c}</div><div class="rate-val">${hasGM[c] ? rates[c] + 'pt' : '-'}</div>${hasGM[c] ? `<div class="rate-delta ${deltaClass}">${deltaText}</div>` : ''}</div>`;
+    });
+  }
+
+  function renderStats(data) {
+    const tbody = document.getElementById('statsTableBody');
+    const summary = document.getElementById('statsSummary');
+    tbody.innerHTML = '';
+    const byTag = document.getElementById('groupByTag').value === 'true';
+
+    if (data.length === 0) {
+      summary.innerHTML = '<span style="color:#888;">表示対象の戦績がありません</span>';
+      tbody.innerHTML = '<tr><td colspan="6" style="color:#888;">データがありません</td></tr>';
+      return;
+    }
+
+    const totalWins = data.filter(m => m.result === 'WIN').length;
+    const totalLosses = data.filter(m => m.result === 'LOSE').length;
+    const totalGames = totalWins + totalLosses;
+    const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
+
+    const firstWins = data.filter(m => m.turn === '先攻' && m.result === 'WIN').length;
+    const firstLosses = data.filter(m => m.turn === '先攻' && m.result === 'LOSE').length;
+    const firstGames = firstWins + firstLosses;
+    const firstRate = firstGames > 0 ? Math.round((firstWins / firstGames) * 100) : 0;
+
+    const secondWins = data.filter(m => m.turn === '後攻' && m.result === 'WIN').length;
+    const secondLosses = data.filter(m => m.turn === '後攻' && m.result === 'LOSE').length;
+    const secondGames = secondWins + secondLosses;
+    const secondRate = secondGames > 0 ? Math.round((secondWins / secondGames) * 100) : 0;
+
+    summary.innerHTML = `
+      <div><strong>合計</strong> <span class="stat-pill">${totalWins}勝 ${totalLosses}敗</span> <span class="stat-pill">勝率 ${winRate}%</span></div>
+      <div><span class="stat-pill">【先攻時】${firstWins}勝 ${firstLosses}敗 (勝率 ${firstRate}%)</span> <span class="stat-pill">【後攻時】${secondWins}勝 ${secondLosses}敗 (勝率 ${secondRate}%)</span></div>
+    `;
+
+    const map = {};
+    data.forEach(m => {
+      const myDeckName = byTag && m.myTag ? `${m.myClass} (${m.myType}[${m.myTag}])` : `${m.myClass} (${m.myType})`;
+      const oppDeckName = `${m.oppClass} (${m.oppType})`;
+      
+      const key = `${myDeckName} vs ${oppDeckName}`;
+
+      if (!map[key]) map[key] = { my: myDeckName, opp: oppDeckName, win: 0, lose: 0, total: 0 };
+      map[key].total++;
+      if (m.result === 'WIN') map[key].win++; else map[key].lose++;
+    });
+
+    const list = Object.values(map).map(s => {
+      s.winRate = Math.round((s.win / s.total) * 100);
+      return s;
+    }).sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+
+    list.forEach(s => {
+      let judge = '五分';
+      if (s.winRate >= 55) judge = '微有利 ★';
+      if (s.winRate >= 65) judge = '有利 ★★★';
+      if (s.winRate <= 45) judge = '微不利';
+      if (s.winRate <= 35) judge = '不利 ✕';
+
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${s.my}</strong></td>
+          <td>${s.opp}</td>
+          <td>${s.total}</td>
+          <td>${s.win}W ${s.lose}L</td>
+          <td class="${s.winRate >= 50 ? 'win-rate-high' : 'win-rate-low'}">${s.winRate}%</td>
+          <td>${judge}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function renderHistory(data) {
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+
+    if (data.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:#888; padding:10px;">ログがありません</div>';
+      return;
+    }
+
+    data.forEach(m => {
+      const tagHTML = m.myTag ? `<span class="tag-badge">${m.myTag}</span>` : '';
+      const gemHTML = m.gemClass ? `<span style="color:#d4af37; font-weight:bold; font-size:0.72rem;">[${m.gemClass}]</span>` : '';
+      const formatHTML = m.format ? `<span style="font-size:0.7rem; color:#888;">[${m.format}]</span>` : '';
+      const turnBadge = `<span style="font-size:0.7rem; background:rgba(212,175,55,0.15); border:1px solid var(--gold-accent); padding:0 3px; border-radius:3px; color:#997b19; font-weight:bold;">${m.turn}</span>`;
+
+      list.innerHTML += `
+        <div class="history-item">
+          <div>
+            <span class="badge ${m.result === 'WIN' ? 'badge-win' : 'badge-lose'}">${m.result}</span>
+            ${turnBadge}
+            <strong>${m.myClass}(${m.myType})</strong>${tagHTML} vs ${m.oppClass}(${m.oppType})
+            ${formatHTML}
+            <br><span style="font-size:0.75rem; color:#888;">${gemHTML} ${m.isGM ? `${m.rank} ${m.rateChange > 0 ? '+' : ''}${m.rateChange}pt` : m.rank}</span>
+          </div>
+          <div style="text-align:right;">
+            <button class="action-btn edit-btn" onclick="openEditModal('${m.id}')">✏️</button>
+            <button class="action-btn delete-btn" onclick="deleteMatch('${m.id}')">×</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function renderTourneys() {
+    const list = document.getElementById('tourneyList');
+    list.innerHTML = tourneys.length === 0 ? '<div style="text-align:center; color:#888; padding:10px;">大会ログがありません</div>' : '';
+    tourneys.forEach(t => {
+      // 修正: 開催日をブロック要素化し、大会名と重ならないように改行して配置
+      const dateHTML = t.date ? `<div style="font-size:0.72rem; color:#888; font-weight:bold; margin-bottom:1px;">[${t.date}]</div>` : '';
+      
+      const d1 = t.deck1 || t.deck || '未設定';
+      const d2 = t.deck2 ? `<br>・デッキ2: ${t.deck2}` : '';
+      const deckHTML = `<div style="font-size:0.75rem; color:#555; margin-top:2px;">使用デッキ:<br>・デッキ1: ${d1}${d2}</div>`;
+
+      list.innerHTML += `
+        <div class="history-item" style="align-items: flex-start;">
+          <div style="flex: 1; min-width: 0; word-break: break-all;">
+            ${dateHTML}
+            <div><strong>${t.name}</strong> <span style="font-size:0.75rem; color:#d4af37;">[${t.format}]</span></div>
+            <span style="font-size:0.8rem; color:#c82828; font-weight:bold;">結果: ${t.result}</span>
+            ${deckHTML}
+            ${t.memo ? `<div style="font-size:0.75rem; color:#777; margin-top:2px; white-space:pre-wrap;">メモ: ${t.memo}</div>` : ''}
+          </div>
+          <div style="text-align:right; flex-shrink: 0; margin-left: 8px;">
+            <button class="action-btn edit-btn" onclick="openEditTourneyModal('${t.id}')">✏️</button>
+            <button class="action-btn delete-btn" onclick="deleteTourney('${t.id}')">×</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function renderDecks() {
+    const list = document.getElementById('deckList');
+    list.innerHTML = decks.length === 0 ? '<div style="text-align:center; color:#888; padding:10px;">登録デッキがありません</div>' : '';
+    decks.forEach(d => {
+      const codeHTML = d.code ? `<span style="font-size:0.75rem; color:#d4af37; font-weight:bold;">📋 コード: ${d.code}</span><br>` : '';
+      const imgHTML = d.imgUrl ? `<a href="${d.imgUrl}" target="_blank" style="font-size:0.75rem; color:#d4af37;">🖼️ デッキ画像を表示</a><br>` : '';
+
+      list.innerHTML += `
+        <div class="history-item">
+          <div>
+            <strong>${d.title}</strong> <span style="font-size:0.75rem; color:#666;">(${d.className})</span><br>
+            ${codeHTML}
+            ${imgHTML}
+            ${d.memo ? `<div style="font-size:0.75rem; color:#555; white-space:pre-wrap; margin-top:2px;">${d.memo}</div>` : ''}
+          </div>
+          <div style="text-align:right;">
+            <button class="action-btn edit-btn" onclick="openEditDeckModal('${d.id}')">✏️</button>
+            <button class="action-btn delete-btn" onclick="deleteDeck('${d.id}')">×</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  loadSavedInputs();
+</script>
+</body>
+</html>
