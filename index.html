@@ -879,12 +879,12 @@
 
   document.getElementById('myClass').addEventListener('change', () => {
     updateMyDeckDatalist();
-    // update GM初期レート欄 to the stored value for this class (if any)
     const cls = document.getElementById('myClass').value;
     const stored = getStoredInitialRate(cls);
-    // always set (empty string clears previous class value)
     const initialEl = document.getElementById('initialRate');
-    if (initialEl) initialEl.value = stored;
+    if (initialEl) {
+      initialEl.value = stored !== '' ? stored : '';
+    }
   });
 
   document.getElementById('oppClass').addEventListener('change', () => {
@@ -970,6 +970,8 @@
     const rateChangeVal = parseNumber(rateChangeInput.value);
 
     try {
+      const finalInitialRate = isGM.checked ? (initialRateVal !== null ? initialRateVal : parseNumber(getStoredInitialRate(document.getElementById('myClass').value)) || 0) : null;
+
       await addDoc(collection(db, "users", currentUser.uid, "matches"), {
         createdAt: new Date(),
         format: document.getElementById('formatInput').value,
@@ -984,10 +986,18 @@
         result: document.querySelector('input[name="result"]:checked').value,
         isGM: isGM.checked,
         rank: isGM.checked ? `GM (${document.getElementById('gmGroup').value})` : document.getElementById('userRank').value,
-        initialRate: isGM.checked ? initialRateVal : null,
+        initialRate: finalInitialRate, // ← ここを確実に渡す
         rateChange: isGM.checked ? (rateChangeVal !== null ? rateChangeVal : 0) : null,
         date: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
       });
+
+      // 次回用の初期レートを自動更新（初期レート + レート増減）
+      if (isGM.checked) {
+        const cls = document.getElementById('myClass').value;
+        const nextInitialRate = finalInitialRate + (rateChangeVal !== null ? rateChangeVal : 0);
+        setStoredInitialRate(nextInitialRate, cls);
+        initialRateInput.value = nextInitialRate;
+      }
 
       // GMの場合、次回起動時の初期レートを「現在の値 + 増減」で計算して保存
       if (isGM.checked) {
@@ -1237,44 +1247,29 @@
     sel.value = cur;
   }
 
-function renderGMRates(data) {
+  function renderGMRates(data) {
     const board = document.getElementById('rateBoard');
     board.innerHTML = '';
-    const rates = {}; const hasGM = {}; const totalDeltas = {};
-    const baseRates = {};
-    ALL_CLASSES.forEach(c => { 
-      rates[c] = 0; 
-      hasGM[c] = false; 
-      totalDeltas[c] = 0; 
-      baseRates[c] = null;
-    });
+    const rates = {}; const hasGM = {}; const deltas = {};
+    ALL_CLASSES.forEach(c => { rates[c] = 0; hasGM[c] = false; deltas[c] = 0; });
 
-    // 時系列順（古い順）に処理して初期レートのベースと増減の合計を正しく計算する
+    const latestByClass = {};
     [...data].reverse().forEach(m => {
-      if (m.isGM && m.myClass && rates[m.myClass] !== undefined) {
-        hasGM[m.myClass] = true;
-        // まだベースレートが未設定、または途中で初期レートが再設定された場合は更新
-        if (baseRates[m.myClass] === null && m.initialRate !== null && m.initialRate !== undefined) {
-          baseRates[m.myClass] = m.initialRate;
-        }
-        const rc = (m.rateChange !== null && m.rateChange !== undefined) ? Number(m.rateChange) : 0;
-        totalDeltas[m.myClass] += rc;
+      if (m.isGM && m.myClass && rates[m.myClass] !== undefined && !latestByClass[m.myClass]) {
+        latestByClass[m.myClass] = m;
       }
     });
 
     ALL_CLASSES.forEach(c => {
-      if (hasGM[c]) {
-        const bRate = baseRates[c] !== null ? baseRates[c] : 0;
-        rates[c] = bRate + totalDeltas[c];
+      const latest = latestByClass[c];
+      if (latest) {
+        hasGM[c] = true;
+        const baseRate = latest.initialRate !== null ? latest.initialRate : 0;
+        const rateChange = latest.rateChange !== null ? latest.rateChange : 0;
+        rates[c] = baseRate + rateChange;
+        deltas[c] = rateChange;
       }
     });
-
-    ALL_CLASSES.forEach(c => {
-      const deltaText = hasGM[c] ? `${totalDeltas[c] > 0 ? '+' : ''}${totalDeltas[c]}pt` : '';
-      const deltaClass = hasGM[c] ? (totalDeltas[c] > 0 ? 'delta-up' : totalDeltas[c] < 0 ? 'delta-down' : 'delta-zero') : 'delta-zero';
-      board.innerHTML += `<div class="rate-card"><div class="class-name">${c}</div><div class="rate-val">${hasGM[c] ? rates[c] + 'pt' : '-'}</div>${hasGM[c] ? `<div class="rate-delta ${deltaClass}">${deltaText}</div>` : ''}</div>`;
-    });
-  }
 
     ALL_CLASSES.forEach(c => {
       const deltaText = hasGM[c] ? `${deltas[c] > 0 ? '+' : ''}${deltas[c]}pt` : '';
