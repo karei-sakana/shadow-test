@@ -1220,6 +1220,10 @@
     const myClassFilter = myClassFilterEl ? myClassFilterEl.value : 'ALL';
     const myTypeFilter = myTypeFilterEl ? myTypeFilterEl.value.trim() : '';
 
+    // GMレートは全データから計算（フィルタ対象外）
+    renderGMRates(matches);
+
+    // 他の表示はフィルタを適用
     let filtered = matches;
     if (season !== 'ALL') filtered = filtered.filter(m => m.season === season);
     if (format !== 'ALL') filtered = filtered.filter(m => m.format === format);
@@ -1228,7 +1232,6 @@
     if (myClassFilter !== 'ALL') filtered = filtered.filter(m => m.myClass === myClassFilter);
     if (myTypeFilter !== '') filtered = filtered.filter(m => (m.myType || '').toLowerCase() === myTypeFilter.toLowerCase());
 
-    renderGMRates(filtered);
     renderStats(filtered);
     renderHistory(filtered);
   }
