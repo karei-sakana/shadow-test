@@ -502,7 +502,12 @@
       <h2>📢 アップデート情報・更新履歴</h2>
       <ul class="update-log-list">
         <li class="update-log-item">
-          <span class="update-date">2026.07 (最新)</span>
+          <span class="update-date">2026.07（最新）</span>
+          <strong>GM時のレート保持 & 絞り込み機能にクラスとデッキの追加</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートを最初に記載したレートと増減後のレートから計算し入力なしで反映されるよう改善しました。絞り込み機能にクラスとデッキを追加しました。</p>
+        </li>
+        <li class="update-log-item">
+          <span class="update-date">2026.07</span>
           <strong>大会戦績の表示レイアウト修正 & ラベル変更</strong>
           <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">スマホ表示時に開催日と大会名が重ならないようレイアウトを修正し、入力・表示の「開催日付」を「開催日」に変更しました。また、第1章の相性分析・ログへの先攻・後攻絞り込み機能を追加しました。</p>
         </li>
@@ -750,17 +755,20 @@
     return isNaN(num) ? null : num;
   };
 
-  const savedFields = ['formatInput', 'seasonInput', 'myClass', 'myType', 'myTag', 'gemClass', 'gmGroup', 'userRank', 'initialRate'];
+  const savedFields = ['formatInput', 'seasonInput', 'myClass', 'myType', 'myTag', 'gemClass', 'gmGroup', 'userRank'];
   const gmInitialRateStorageKey = 'swb_gmNextInitialRate';
 
-  function getStoredInitialRate() {
-    return localStorage.getItem(gmInitialRateStorageKey) || localStorage.getItem('swb_initialRate') || '';
+  function getStoredInitialRate(cls) {
+    if (!cls) cls = (document.getElementById('myClass') && document.getElementById('myClass').value) || '';
+    const perKey = cls ? `${gmInitialRateStorageKey}_${cls}` : gmInitialRateStorageKey;
+    return localStorage.getItem(perKey) || localStorage.getItem(gmInitialRateStorageKey) || localStorage.getItem('swb_initialRate') || '';
   }
 
-  function setStoredInitialRate(value) {
+  function setStoredInitialRate(value, cls) {
     const nextValue = value === null || value === '' ? '' : String(value);
-    localStorage.setItem(gmInitialRateStorageKey, nextValue);
-    localStorage.setItem('swb_initialRate', nextValue);
+    if (!cls) cls = (document.getElementById('myClass') && document.getElementById('myClass').value) || '';
+    const perKey = cls ? `${gmInitialRateStorageKey}_${cls}` : gmInitialRateStorageKey;
+    localStorage.setItem(perKey, nextValue);
     return nextValue;
   }
 
@@ -774,7 +782,8 @@
     });
 
     const initialRateEl = document.getElementById('initialRate');
-    const storedInitialRate = getStoredInitialRate();
+    const curClass = (document.getElementById('myClass') && document.getElementById('myClass').value) || '';
+    const storedInitialRate = getStoredInitialRate(curClass);
     if (initialRateEl && storedInitialRate !== '') {
       initialRateEl.value = storedInitialRate;
     }
@@ -871,6 +880,12 @@
 
   document.getElementById('myClass').addEventListener('change', () => {
     updateMyDeckDatalist();
+    // update GM初期レート欄 to the stored value for this class (if any)
+    const cls = document.getElementById('myClass').value;
+    const stored = getStoredInitialRate(cls);
+    // always set (empty string clears previous class value)
+    const initialEl = document.getElementById('initialRate');
+    if (initialEl) initialEl.value = stored;
   });
 
   document.getElementById('oppClass').addEventListener('change', () => {
@@ -977,9 +992,10 @@
 
       // GMの場合、次回起動時の初期レートを「現在の値 + 増減」で計算して保存
       if (isGM.checked) {
-        const baseInitialRate = initialRateVal !== null ? initialRateVal : parseNumber(getStoredInitialRate());
+        const cls = document.getElementById('myClass').value;
+        const baseInitialRate = initialRateVal !== null ? initialRateVal : parseNumber(getStoredInitialRate(cls));
         const nextInitialRate = (baseInitialRate !== null ? baseInitialRate : 0) + (rateChangeVal !== null ? rateChangeVal : 0);
-        const persistedValue = setStoredInitialRate(nextInitialRate);
+        const persistedValue = setStoredInitialRate(nextInitialRate, cls);
         initialRateInput.value = persistedValue;
       }
 
@@ -1188,8 +1204,10 @@
   document.getElementById('filterTurn').addEventListener('change', renderAll);
   document.getElementById('filterTag').addEventListener('input', renderAll);
   document.getElementById('groupByTag').addEventListener('change', renderAll);
-  document.getElementById('filterMyClass').addEventListener('change', renderAll);
-  document.getElementById('filterMyType').addEventListener('input', renderAll);
+  const filterMyClassEl = document.getElementById('filterMyClass');
+  const filterMyTypeEl = document.getElementById('filterMyType');
+  if (filterMyClassEl) filterMyClassEl.addEventListener('change', renderAll);
+  if (filterMyTypeEl) filterMyTypeEl.addEventListener('input', renderAll);
 
   function renderAll() {
     updateSeasonDropdown();
@@ -1197,8 +1215,10 @@
     const format = document.getElementById('filterFormat').value;
     const turn = document.getElementById('filterTurn').value;
     const tagFilter = document.getElementById('filterTag').value.trim();
-    const myClassFilter = document.getElementById('filterMyClass').value;
-    const myTypeFilter = document.getElementById('filterMyType').value.trim();
+    const myClassFilterEl = document.getElementById('filterMyClass');
+    const myTypeFilterEl = document.getElementById('filterMyType');
+    const myClassFilter = myClassFilterEl ? myClassFilterEl.value : 'ALL';
+    const myTypeFilter = myTypeFilterEl ? myTypeFilterEl.value.trim() : '';
 
     let filtered = matches;
     if (season !== 'ALL') filtered = filtered.filter(m => m.season === season);
@@ -1225,6 +1245,7 @@
   function renderGMRates(data) {
     const board = document.getElementById('rateBoard');
     const summary = document.getElementById('rateSummary');
+    if (!board || !summary) return; // 要素が見つからない場合は処理を中止
     board.innerHTML = '';
     const rates = {}; const hasGM = {}; const deltas = {};
     ALL_CLASSES.forEach(c => { rates[c] = 0; hasGM[c] = false; deltas[c] = 0; });
@@ -1247,10 +1268,7 @@
       }
     });
 
-    const hasAnyGM = ALL_CLASSES.some(c => hasGM[c]);
-    const totalRate = ALL_CLASSES.reduce((sum, c) => sum + (hasGM[c] ? rates[c] : 0), 0);
-    const totalDelta = ALL_CLASSES.reduce((sum, c) => sum + (hasGM[c] ? deltas[c] : 0), 0);
-    summary.innerHTML = hasAnyGM ? `最終合計レート: <strong>${totalRate}pt</strong>${totalDelta !== 0 ? ` (${totalDelta > 0 ? '+' : ''}${totalDelta}pt)` : ''}` : 'GMレートの記録がまだありません';
+    summary.innerHTML = ALL_CLASSES.some(c => hasGM[c]) ? '各クラスのGMレートを表示しています。' : 'GMレートの記録がまだありません';
 
     ALL_CLASSES.forEach(c => {
       const deltaText = hasGM[c] ? `${deltas[c] > 0 ? '+' : ''}${deltas[c]}pt` : '';
@@ -1262,6 +1280,7 @@
   function renderStats(data) {
     const tbody = document.getElementById('statsTableBody');
     const summary = document.getElementById('statsSummary');
+    if (!tbody || !summary) return; // 要素が見つからない場合は処理を中止
     tbody.innerHTML = '';
     const byTag = document.getElementById('groupByTag').value === 'true';
 
@@ -1330,6 +1349,7 @@
 
   function renderHistory(data) {
     const list = document.getElementById('historyList');
+    if (!list) return; // 要素が見つからない場合は処理を中止
     list.innerHTML = '';
 
     if (data.length === 0) {
