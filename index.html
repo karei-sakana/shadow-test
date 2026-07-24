@@ -363,6 +363,14 @@
             <option value="true">サブタグ</option>
           </select>
         </div>
+        <div>自分のクラス: 
+          <select id="filterMyClass" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
+            <option value="ALL">すべて</option>
+            <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
+            <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
+          </select>
+        </div>
+        <div>自分のデッキ: <input type="text" id="filterMyType" placeholder="すべて" list="filterMyTypeList" style="padding: 2px 4px; font-size: 13px; width: 110px; display: inline-block;"></div>
       </div>
       <div id="statsSummary" class="stats-summary"></div>
       <div class="table-wrapper">
@@ -696,6 +704,7 @@
 
 <!-- 共有用datalist（3章のデッキから自動生成） -->
 <datalist id="deckLibraryList"></datalist>
+<datalist id="filterMyTypeList"></datalist>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -742,6 +751,19 @@
   };
 
   const savedFields = ['formatInput', 'seasonInput', 'myClass', 'myType', 'myTag', 'gemClass', 'gmGroup', 'userRank', 'initialRate'];
+  const gmInitialRateStorageKey = 'swb_gmNextInitialRate';
+
+  function getStoredInitialRate() {
+    return localStorage.getItem(gmInitialRateStorageKey) || localStorage.getItem('swb_initialRate') || '';
+  }
+
+  function setStoredInitialRate(value) {
+    const nextValue = value === null || value === '' ? '' : String(value);
+    localStorage.setItem(gmInitialRateStorageKey, nextValue);
+    localStorage.setItem('swb_initialRate', nextValue);
+    return nextValue;
+  }
+
   function loadSavedInputs() {
     savedFields.forEach(id => {
       const savedVal = localStorage.getItem('swb_' + id);
@@ -750,6 +772,13 @@
         if (el) el.value = savedVal;
       }
     });
+
+    const initialRateEl = document.getElementById('initialRate');
+    const storedInitialRate = getStoredInitialRate();
+    if (initialRateEl && storedInitialRate !== '') {
+      initialRateEl.value = storedInitialRate;
+    }
+
     updateMyDeckDatalist();
     updateOppDeckDatalist();
   }
@@ -879,6 +908,12 @@
     });
 
     document.getElementById('tagHistory').innerHTML = Array.from(tags).map(t => `<option value="${t}">`).join('');
+
+    // populate filter datalist for "自分のデッキ" (filterMyTypeList)
+    const myTypes = new Set();
+    decks.forEach(d => { if (d.title) myTypes.add(d.title); });
+    matches.forEach(m => { if (m.myType) myTypes.add(m.myType); });
+    document.getElementById('filterMyTypeList').innerHTML = Array.from(myTypes).map(t => `<option value="${t}">`).join('');
   }
 
   window.switchPage = (pageId, btn) => {
@@ -941,9 +976,11 @@
       });
 
       // GMの場合、次回起動時の初期レートを「現在の値 + 増減」で計算して保存
-      if (isGM.checked && initialRateVal !== null && rateChangeVal !== null) {
-        const nextInitialRate = initialRateVal + rateChangeVal;
-        localStorage.setItem('swb_initialRate', nextInitialRate.toString());
+      if (isGM.checked) {
+        const baseInitialRate = initialRateVal !== null ? initialRateVal : parseNumber(getStoredInitialRate());
+        const nextInitialRate = (baseInitialRate !== null ? baseInitialRate : 0) + (rateChangeVal !== null ? rateChangeVal : 0);
+        const persistedValue = setStoredInitialRate(nextInitialRate);
+        initialRateInput.value = persistedValue;
       }
 
       document.getElementById('oppType').value = '';
@@ -1151,6 +1188,8 @@
   document.getElementById('filterTurn').addEventListener('change', renderAll);
   document.getElementById('filterTag').addEventListener('input', renderAll);
   document.getElementById('groupByTag').addEventListener('change', renderAll);
+  document.getElementById('filterMyClass').addEventListener('change', renderAll);
+  document.getElementById('filterMyType').addEventListener('input', renderAll);
 
   function renderAll() {
     updateSeasonDropdown();
@@ -1158,12 +1197,16 @@
     const format = document.getElementById('filterFormat').value;
     const turn = document.getElementById('filterTurn').value;
     const tagFilter = document.getElementById('filterTag').value.trim();
+    const myClassFilter = document.getElementById('filterMyClass').value;
+    const myTypeFilter = document.getElementById('filterMyType').value.trim();
 
     let filtered = matches;
     if (season !== 'ALL') filtered = filtered.filter(m => m.season === season);
     if (format !== 'ALL') filtered = filtered.filter(m => m.format === format);
     if (turn !== 'ALL') filtered = filtered.filter(m => m.turn === turn);
     if (tagFilter !== '') filtered = filtered.filter(m => m.myTag === tagFilter);
+    if (myClassFilter !== 'ALL') filtered = filtered.filter(m => m.myClass === myClassFilter);
+    if (myTypeFilter !== '') filtered = filtered.filter(m => (m.myType || '').toLowerCase() === myTypeFilter.toLowerCase());
 
     renderGMRates(filtered);
     renderStats(filtered);
