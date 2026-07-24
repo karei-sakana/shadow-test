@@ -340,7 +340,6 @@
 
     <div class="trump-card">
       <h2><span style="color: var(--gold-accent);">♣</span> 各クラス GMレート（現在値）</h2>
-      <div class="rate-summary" id="rateSummary"></div>
       <div class="rate-board" id="rateBoard"></div>
     </div>
 
@@ -1238,35 +1237,44 @@
     sel.value = cur;
   }
 
-  function renderGMRates(data) {
+function renderGMRates(data) {
     const board = document.getElementById('rateBoard');
-    const summary = document.getElementById('rateSummary');
     board.innerHTML = '';
-    const rates = {}; const hasGM = {}; const deltas = {};
-    ALL_CLASSES.forEach(c => { rates[c] = 0; hasGM[c] = false; deltas[c] = 0; });
+    const rates = {}; const hasGM = {}; const totalDeltas = {};
+    const baseRates = {};
+    ALL_CLASSES.forEach(c => { 
+      rates[c] = 0; 
+      hasGM[c] = false; 
+      totalDeltas[c] = 0; 
+      baseRates[c] = null;
+    });
 
-    const latestByClass = {};
+    // 時系列順（古い順）に処理して初期レートのベースと増減の合計を正しく計算する
     [...data].reverse().forEach(m => {
-      if (m.isGM && m.myClass && rates[m.myClass] !== undefined && !latestByClass[m.myClass]) {
-        latestByClass[m.myClass] = m;
+      if (m.isGM && m.myClass && rates[m.myClass] !== undefined) {
+        hasGM[m.myClass] = true;
+        // まだベースレートが未設定、または途中で初期レートが再設定された場合は更新
+        if (baseRates[m.myClass] === null && m.initialRate !== null && m.initialRate !== undefined) {
+          baseRates[m.myClass] = m.initialRate;
+        }
+        const rc = (m.rateChange !== null && m.rateChange !== undefined) ? Number(m.rateChange) : 0;
+        totalDeltas[m.myClass] += rc;
       }
     });
 
     ALL_CLASSES.forEach(c => {
-      const latest = latestByClass[c];
-      if (latest) {
-        hasGM[c] = true;
-        const baseRate = latest.initialRate !== null ? latest.initialRate : 0;
-        const rateChange = latest.rateChange !== null ? latest.rateChange : 0;
-        rates[c] = baseRate + rateChange;
-        deltas[c] = rateChange;
+      if (hasGM[c]) {
+        const bRate = baseRates[c] !== null ? baseRates[c] : 0;
+        rates[c] = bRate + totalDeltas[c];
       }
     });
 
-    const hasAnyGM = ALL_CLASSES.some(c => hasGM[c]);
-    const totalRate = ALL_CLASSES.reduce((sum, c) => sum + (hasGM[c] ? rates[c] : 0), 0);
-    const totalDelta = ALL_CLASSES.reduce((sum, c) => sum + (hasGM[c] ? deltas[c] : 0), 0);
-    summary.innerHTML = hasAnyGM ? `最終合計レート: <strong>${totalRate}pt</strong>${totalDelta !== 0 ? ` (${totalDelta > 0 ? '+' : ''}${totalDelta}pt)` : ''}` : 'GMレートの記録がまだありません';
+    ALL_CLASSES.forEach(c => {
+      const deltaText = hasGM[c] ? `${totalDeltas[c] > 0 ? '+' : ''}${totalDeltas[c]}pt` : '';
+      const deltaClass = hasGM[c] ? (totalDeltas[c] > 0 ? 'delta-up' : totalDeltas[c] < 0 ? 'delta-down' : 'delta-zero') : 'delta-zero';
+      board.innerHTML += `<div class="rate-card"><div class="class-name">${c}</div><div class="rate-val">${hasGM[c] ? rates[c] + 'pt' : '-'}</div>${hasGM[c] ? `<div class="rate-delta ${deltaClass}">${deltaText}</div>` : ''}</div>`;
+    });
+  }
 
     ALL_CLASSES.forEach(c => {
       const deltaText = hasGM[c] ? `${deltas[c] > 0 ? '+' : ''}${deltas[c]}pt` : '';
