@@ -353,14 +353,22 @@
           </select>
         </div>
         <div>サブタグ: <input type="text" id="filterTag" placeholder="すべて" list="tagHistory" style="padding: 2px 4px; font-size: 13px; width: 90px; display: inline-block;"></div>
-        <div>クラス: 
+        <div>自分のクラス: 
           <select id="filterMyClass" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
             <option value="ALL">すべて</option>
             <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
             <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
           </select>
         </div>
-        <div>デッキ: <input type="text" id="filterMyType" placeholder="すべて" list="filterMyTypeList" style="padding: 2px 4px; font-size: 13px; width: 110px; display: inline-block;"></div>
+        <div>自分のデッキ: <input type="text" id="filterMyType" placeholder="すべて" list="filterMyTypeList" style="padding: 2px 4px; font-size: 13px; width: 110px; display: inline-block;"></div>
+        <div>相手のクラス: 
+          <select id="filterEnemyClass" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
+            <option value="ALL">すべて</option>
+            <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
+            <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
+          </select>
+        </div>
+        <div>相手のデッキ: <input type="text" id="filterEnemyType" placeholder="すべて" list="filterEnemyTypeList" style="padding: 2px 4px; font-size: 13px; width: 110px; display: inline-block;"></div>
         <div>並び替え: 
           <select id="statsSortOrder" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
             <option value="winRate">勝率順</option>
@@ -499,13 +507,23 @@
       <ul class="update-log-list">
         <li class="update-log-item">
           <span class="update-date">2026.07.26</span>
-          <strong>機能改善：相性分析の並び替え（クラス＆デッキ順に対応）</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">相性分析の並び替えにおいて、相手のクラスごとにデッキが混ざらない「クラス＆デッキ順」に改善しました。</p>
+          <strong>並び替え機能&GMレートの修正機能の追加</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">相性分析の並び替え機能を追加しました。「勝率順」「対戦相手のクラス＆デッキ順」で並び替えられます。GMレートの現在地を後から修正できるようにしました。</p>
         </li>
         <li class="update-log-item">
           <span class="update-date">2026.07.25</span>
           <strong>デフォルトデッキの追加</strong>
           <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">ロイヤルのデフォルトデッキを追加しました。</p>
+        </li>
+        <li class="update-log-item">
+          <span class="update-date">2026.07.24</span>
+          <strong>不具合修正</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートが正しく更新されない不具合を修正しました。</p>
+        </li>
+        <li class="update-log-item">
+          <span class="update-date">2026.07.23</span>
+          <strong>GM時のレート保持 & 絞り込み機能にクラスとデッキの追加</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートを最初に記載したレートと増減後のレートから計算し入力なしで反映されるよう改善しました。絞り込み機能にクラスとデッキを追加しました。</p>
         </li>
       </ul>
     </div>
@@ -1250,6 +1268,8 @@
     const tagFilter = document.getElementById('filterTag').value.trim();
     const myClassFilter = document.getElementById('filterMyClass').value;
     const myTypeFilter = document.getElementById('filterMyType').value.trim();
+    const enemyClassFilter = document.getElementById('filterEnemyClass').value;
+    const enemyTypeFilter = document.getElementById('filterEnemyType').value.trim();
 
     let filtered = matches;
     if (season !== 'ALL') filtered = filtered.filter(m => m.season === season);
@@ -1258,6 +1278,8 @@
     if (tagFilter !== '') filtered = filtered.filter(m => m.myTag === tagFilter);
     if (myClassFilter !== 'ALL') filtered = filtered.filter(m => m.myClass === myClassFilter);
     if (myTypeFilter !== '') filtered = filtered.filter(m => (m.myType || '').toLowerCase() === myTypeFilter.toLowerCase());
+    if (enemyClassFilter !== 'ALL') filtered = filtered.filter(m => m.oppClass === enemyClassFilter);
+    if (enemyTypeFilter !== '') filtered = filtered.filter(m => (m.oppType || '').toLowerCase() === enemyTypeFilter.toLowerCase());
 
     renderGMRates(filtered);
     renderStats(filtered);
