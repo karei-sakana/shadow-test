@@ -109,7 +109,6 @@
     .gm-container { display: none; margin-top: 8px; padding: 10px; background: rgba(212, 175, 55, 0.08); border-radius: 8px; border: 1px solid var(--gold-accent); }
     .gm-container.active { display: block; }
 
-    /* 大会2デッキ用コンテナ */
     .second-deck-container { display: none; margin-top: 8px; }
     .second-deck-container.active { display: block; }
 
@@ -145,17 +144,14 @@
     .delete-btn { color: #999; }
     .edit-btn { color: var(--gold-dark); }
 
-    /* アップデート情報用スタイル */
     .update-log-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
     .update-log-item { background: rgba(212, 175, 55, 0.05); border-left: 3px solid var(--gold-accent); padding: 8px 12px; border-radius: 4px; }
     .update-date { font-family: var(--font-family-en); font-size: 0.75rem; color: var(--gold-dark); font-weight: bold; display: block; margin-bottom: 2px; }
 
-    /* モーダル共通 */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
     .modal.active { display: flex; }
     .modal-content { background: #fff; border: 2px solid var(--gold-accent); border-radius: 12px; width: 92%; max-width: 500px; padding: 16px; max-height: 90vh; overflow-y: auto; }
 
-    /* フッター */
     footer {
       margin-top: 30px;
       padding: 18px 12px;
@@ -241,7 +237,6 @@
             <input type="text" id="myTag" placeholder="例: Ver1.1, 構築A">
           </div>
 
-          <!-- グループ選択（通常時のみ表示） -->
           <div class="form-group" id="gemField">
             <label for="gemClass">グループ</label>
             <select id="gemClass">
@@ -369,7 +364,7 @@
         <div>並び替え: 
           <select id="statsSortOrder" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
             <option value="winRate">勝率順</option>
-            <option value="oppClass">相手のクラス順</option>
+            <option value="oppClass">相手のクラス＆デッキ順</option>
           </select>
         </div>
       </div>
@@ -504,23 +499,13 @@
       <ul class="update-log-list">
         <li class="update-log-item">
           <span class="update-date">2026.07.26</span>
-          <strong>機能追加：相性分析の並び替え・GMレートの手動修正</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">相性分析の「勝率順」「相手のクラス順」の切り替え機能、および各クラスGMレートの現在値あとから修正機能を追加しました。</p>
+          <strong>機能改善：相性分析の並び替え（クラス＆デッキ順に対応）</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">相性分析の並び替えにおいて、相手のクラスごとにデッキが混ざらない「クラス＆デッキ順」に改善しました。</p>
         </li>
         <li class="update-log-item">
           <span class="update-date">2026.07.25</span>
           <strong>デフォルトデッキの追加</strong>
           <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">ロイヤルのデフォルトデッキを追加しました。</p>
-        </li>
-        <li class="update-log-item">
-          <span class="update-date">2026.07.24</span>
-          <strong>不具合修正</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートが正しく更新されない不具合を修正しました。</p>
-        </li>
-        <li class="update-log-item">
-          <span class="update-date">2026.07.23</span>
-          <strong>GM時のレート保持 & 絞り込み機能にクラスとデッキの追加</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートを最初に記載したレートと増減後のレートから計算し入力なしで反映されるよう改善しました。絞り込み機能にクラスとデッキを追加しました。</p>
         </li>
       </ul>
     </div>
@@ -539,7 +524,7 @@
       </div>
       <div class="footer-section">
         <h3>ℹ️ アプリ仕様</h3>
-        <p>バージョン: Ver 1.7.0</p>
+        <p>バージョン: Ver 1.7.1</p>
         <p>対応機能: ランク戦績記録 / GMレート集計 / 大会戦績管理 / デッキライブラリ </p>
       </div>
     </div>
@@ -731,7 +716,6 @@
   </div>
 </div>
 
-<!-- 共有用datalist（3章のデッキから自動生成） -->
 <datalist id="deckLibraryList"></datalist>
 <datalist id="filterMyTypeList"></datalist>
 
@@ -1080,7 +1064,6 @@
 
   window.closeModal = (id) => document.getElementById(id).classList.remove('active');
 
-  // GMレート手動修正モーダルを開く
   window.openEditGMRateModal = (cls, currentVal) => {
     document.getElementById('editRateClass').value = cls;
     document.getElementById('gmRateModalTitle').innerHTML = `✏️ ${cls} のGMレート修正`;
@@ -1088,20 +1071,17 @@
     document.getElementById('editGMRateModal').classList.add('active');
   };
 
-  // GMレート手動修正を保存（指定クラスのベース初期レートを調整して現在値合わせする）
   window.saveGMRateEdit = () => {
     const cls = document.getElementById('editRateClass').value;
     const newVal = parseNumber(document.getElementById('manualRateInput').value);
     if (newVal === null) return alert("有効な数値を入力してください");
 
-    // 該当クラスの現在の合計増減を計算し、新しくなる現在値から逆算して「新しいベース初期レート」を算出・保存する
     const classMatches = matches.filter(m => m.isGM && m.myClass === cls);
     const totalDelta = classMatches.reduce((sum, m) => sum + (parseNumber(m.rateChange) || 0), 0);
     const newBaseRate = newVal - totalDelta;
 
     setStoredInitialRate(newBaseRate, cls);
 
-    // もし現在フォームでそのクラスを選択中ならフォームの初期レート欄も更新
     if (document.getElementById('myClass').value === cls) {
       document.getElementById('initialRate').value = newBaseRate;
     }
@@ -1260,7 +1240,7 @@
   document.getElementById('filterTag').addEventListener('input', renderAll);
   document.getElementById('filterMyClass').addEventListener('change', renderAll);
   document.getElementById('filterMyType').addEventListener('input', renderAll);
-  document.getElementById('statsSortOrder').addEventListener('change', renderAll); // 並び替え変更時
+  document.getElementById('statsSortOrder').addEventListener('change', renderAll);
 
   function renderAll() {
     updateSeasonDropdown();
@@ -1368,7 +1348,7 @@
       
       const key = `${myDeckName} vs ${oppDeckName}`;
 
-      if (!map[key]) map[key] = { my: myDeckName, opp: oppDeckName, oppClass: m.oppClass, win: 0, lose: 0, total: 0 };
+      if (!map[key]) map[key] = { my: myDeckName, opp: oppDeckName, oppClass: m.oppClass, oppType: m.oppType, win: 0, lose: 0, total: 0 };
       map[key].total++;
       if (m.result === 'WIN') map[key].win++; else map[key].lose++;
     });
@@ -1378,18 +1358,20 @@
       return s;
     });
 
-    // 並び替えロジックの切り替え
+    // 並び替えロジック
     if (sortOrder === 'winRate') {
-      // 勝率順（勝率が高い順、同率なら試合数が多い順）
       list.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
     } else if (sortOrder === 'oppClass') {
-      // 相手のクラス順（クラスの配列順、同じクラス内なら勝率順）
+      // 相手のクラス＆デッキ順（相手クラス順 ＞ 相手デッキ名順）
       const classOrder = ALL_CLASSES;
       list.sort((a, b) => {
         const indexA = classOrder.indexOf(a.oppClass);
         const indexB = classOrder.indexOf(b.oppClass);
         if (indexA !== indexB) return indexA - indexB;
-        return b.winRate - a.winRate;
+        // 同じクラス内なら相手デッキ名（文字列）の五十音順で綺麗にまとめる
+        if (a.oppType < b.oppType) return -1;
+        if (a.oppType > b.oppType) return 1;
+        return 0;
       });
     }
 
