@@ -114,13 +114,15 @@
     .second-deck-container.active { display: block; }
 
     .rate-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; margin-top: 8px; }
-    .rate-card { background: rgba(212, 175, 55, 0.08); border: 1px solid var(--gold-accent); border-radius: 8px; padding: 6px; text-align: center; }
+    .rate-card { background: rgba(212, 175, 55, 0.08); border: 1px solid var(--gold-accent); border-radius: 8px; padding: 6px; text-align: center; position: relative; }
     .rate-card .class-name { font-size: 0.72rem; font-weight: 600; }
     .rate-card .rate-val { font-family: var(--font-family-en); font-size: 0.95rem; font-weight: 700; color: var(--heart-red); }
     .rate-card .rate-delta { font-size: 0.72rem; font-weight: 700; margin-top: 2px; }
     .rate-card .delta-up { color: #2e7d32; }
     .rate-card .delta-down { color: #c62828; }
     .rate-card .delta-zero { color: #666; }
+    .rate-edit-icon { position: absolute; top: 2px; right: 2px; font-size: 0.65rem; background: none; border: none; cursor: pointer; color: var(--gold-dark); }
+
     .rate-summary, .stats-summary { margin: 8px 0 10px; padding: 8px 10px; border: 1px solid rgba(212, 175, 55, 0.35); background: rgba(212, 175, 55, 0.08); border-radius: 8px; font-size: 0.82rem; color: #444; }
     .rate-summary strong, .stats-summary strong { color: var(--spade-black); }
     .stats-summary .stat-pill { display: inline-block; padding: 2px 6px; margin: 2px 2px 0 0; border-radius: 999px; background: rgba(255,255,255,0.7); border: 1px solid rgba(212, 175, 55, 0.3); }
@@ -356,20 +358,20 @@
           </select>
         </div>
         <div>サブタグ: <input type="text" id="filterTag" placeholder="すべて" list="tagHistory" style="padding: 2px 4px; font-size: 13px; width: 90px; display: inline-block;"></div>
-        <div>集計単位: 
-          <select id="groupByTag" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
-            <option value="false">アーキタイプ</option>
-            <option value="true">サブタグ</option>
-          </select>
-        </div>
-        <div>自分のクラス: 
+        <div>クラス: 
           <select id="filterMyClass" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
             <option value="ALL">すべて</option>
             <option value="エルフ">エルフ</option><option value="ロイヤル">ロイヤル</option><option value="ウィッチ">ウィッチ</option>
             <option value="ドラゴン">ドラゴン</option><option value="ナイトメア">ナイトメア</option><option value="ビショップ">ビショップ</option><option value="ネメシス">ネメシス</option>
           </select>
         </div>
-        <div>自分のデッキ: <input type="text" id="filterMyType" placeholder="すべて" list="filterMyTypeList" style="padding: 2px 4px; font-size: 13px; width: 110px; display: inline-block;"></div>
+        <div>デッキ: <input type="text" id="filterMyType" placeholder="すべて" list="filterMyTypeList" style="padding: 2px 4px; font-size: 13px; width: 110px; display: inline-block;"></div>
+        <div>並び替え: 
+          <select id="statsSortOrder" style="padding: 2px 4px; font-size: 13px; width: auto; display: inline-block;">
+            <option value="winRate">勝率順</option>
+            <option value="oppClass">相手のクラス順</option>
+          </select>
+        </div>
       </div>
       <div id="statsSummary" class="stats-summary"></div>
       <div class="table-wrapper">
@@ -473,11 +475,11 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="deckCode">デッキコード / 発行コード</label>
+            <label for="deckCode">デッキコード</label>
             <input type="text" id="deckCode" placeholder="例: 4桁コードやポータルURL">
           </div>
           <div class="form-group">
-            <label for="deckImgUrl">デッキ画像URL</label>
+            <label for="deckImgUrl">URL</label>
             <input type="url" id="deckImgUrl" placeholder="https://...">
           </div>
           <div class="form-group" style="grid-column: 1 / -1;">
@@ -501,19 +503,24 @@
       <h2>📢 アップデート情報・更新履歴</h2>
       <ul class="update-log-list">
         <li class="update-log-item">
-          <span class="update-date">2026.07（最新）</span>
+          <span class="update-date">2026.07.26</span>
+          <strong>機能追加：相性分析の並び替え・GMレートの手動修正</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">相性分析の「勝率順」「相手のクラス順」の切り替え機能、および各クラスGMレートの現在値あとから修正機能を追加しました。</p>
+        </li>
+        <li class="update-log-item">
+          <span class="update-date">2026.07.25</span>
+          <strong>デフォルトデッキの追加</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">ロイヤルのデフォルトデッキを追加しました。</p>
+        </li>
+        <li class="update-log-item">
+          <span class="update-date">2026.07.24</span>
+          <strong>不具合修正</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートが正しく更新されない不具合を修正しました。</p>
+        </li>
+        <li class="update-log-item">
+          <span class="update-date">2026.07.23</span>
           <strong>GM時のレート保持 & 絞り込み機能にクラスとデッキの追加</strong>
           <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートを最初に記載したレートと増減後のレートから計算し入力なしで反映されるよう改善しました。絞り込み機能にクラスとデッキを追加しました。</p>
-        </li>
-        <li class="update-log-item">
-          <span class="update-date">2026.07</span>
-          <strong>大会戦績の表示レイアウト修正 & ラベル変更</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">スマホ表示時に開催日と大会名が重ならないようレイアウトを修正し、入力・表示の「開催日付」を「開催日」に変更しました。また、第1章の相性分析・ログへの先攻・後攻絞り込み機能を追加しました。</p>
-        </li>
-        <li class="update-log-item">
-          <span class="update-date">2026.07</span>
-          <strong>大会戦績の2デッキ選択・自由記述対応</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">第2章（大会戦績）に2デッキ制用の切り替えチェックボックスを追加し、第3章の登録デッキから選択または自由に文字入力できるよう改善しました。</p>
         </li>
       </ul>
     </div>
@@ -532,14 +539,14 @@
       </div>
       <div class="footer-section">
         <h3>ℹ️ アプリ仕様</h3>
-        <p>バージョン: Ver 1.6.4</p>
+        <p>バージョン: Ver 1.7.0</p>
         <p>対応機能: ランク戦績記録 / GMレート集計 / 大会戦績管理 / デッキライブラリ </p>
       </div>
     </div>
     <div class="footer-disclaimer">
       <p>⚠️ <strong>免責事項・権利表記</strong></p>
-      <p>当ウェブサイト（アプリ）は個人によって開発された<strong>非公式のファンツール</strong>であり、株式会社Cygamesおよび「Shadowverse / Shadowverse Worlds Beyond」の公式とは一切関係がありません。</p>
       <p>本アプリ内で使用されているゲーム画像・商標・権利物の著作権および知的所有権は、各権利者に帰属します。</p>
+      <p>本ウェブサイト/アプリケーションは、Cygamesと提携関係にあるものでも、Cygamesが推薦するものでも、スポンサーとなっているものでも、個別に承認したものでもありません。Cygamesは本サイト/アプリケーションの運営または内容について責任を負うものではありません。Cygamesの商標およびその他の知的財産の利用は、Cygamesのファンキット利用規約に従う必要があります。Cygamesについて詳しくは、同社ウェブサイト（https://www.cygames.co.jp/）をご覧ください。</p>
     </div>
   </footer>
 
@@ -611,6 +618,24 @@
     <div style="display:flex; gap:8px; margin-top:14px;">
       <button class="btn" style="background:#4a5568; color:#fff;" onclick="closeModal('editModal')">キャンセル</button>
       <button class="btn" onclick="saveMatchEdit()">更新保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✏️ GMレート手動修正用モーダル -->
+<div class="modal" id="editGMRateModal">
+  <div class="modal-content">
+    <h3 style="border-bottom:2px solid var(--gold-accent); padding-bottom:6px; margin-bottom:10px;" id="gmRateModalTitle">✏️ GMレートの修正</h3>
+    <input type="hidden" id="editRateClass">
+    <div class="form-grid">
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label>現在のGMレート（ポイント）</label>
+        <input type="number" id="manualRateInput" placeholder="例: 1650">
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn" style="background:#4a5568; color:#fff;" onclick="closeModal('editGMRateModal')">キャンセル</button>
+      <button class="btn" onclick="saveGMRateEdit()">更新保存</button>
     </div>
   </div>
 </div>
@@ -737,7 +762,7 @@
 
   const DEFAULT_DECK_TYPES = {
     'エルフ': ['進化', 'テンポ'],
-    'ロイヤル': ['連携'],
+    'ロイヤル': ['進化', '連携', '連携進化'],
     'ウィッチ': ['魔手', '秘術', 'リンクル'],
     'ドラゴン': ['ランプ'],
     'ナイトメア': ['アグロ', 'ミッドレンジ', 'モード'],
@@ -923,7 +948,6 @@
 
     document.getElementById('tagHistory').innerHTML = Array.from(tags).map(t => `<option value="${t}">`).join('');
 
-    // populate filter datalist for "自分のデッキ" (filterMyTypeList)
     const myTypes = new Set();
     decks.forEach(d => { if (d.title) myTypes.add(d.title); });
     matches.forEach(m => { if (m.myType) myTypes.add(m.myType); });
@@ -986,20 +1010,11 @@
         result: document.querySelector('input[name="result"]:checked').value,
         isGM: isGM.checked,
         rank: isGM.checked ? `GM (${document.getElementById('gmGroup').value})` : document.getElementById('userRank').value,
-        initialRate: finalInitialRate, // ← ここを確実に渡す
+        initialRate: finalInitialRate,
         rateChange: isGM.checked ? (rateChangeVal !== null ? rateChangeVal : 0) : null,
         date: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
       });
 
-      // 次回用の初期レートを自動更新（初期レート + レート増減）
-      if (isGM.checked) {
-        const cls = document.getElementById('myClass').value;
-        const nextInitialRate = finalInitialRate + (rateChangeVal !== null ? rateChangeVal : 0);
-        setStoredInitialRate(nextInitialRate, cls);
-        initialRateInput.value = nextInitialRate;
-      }
-
-      // GMの場合、次回起動時の初期レートを「現在の値 + 増減」で計算して保存
       if (isGM.checked) {
         const cls = document.getElementById('myClass').value;
         const baseInitialRate = initialRateVal !== null ? initialRateVal : parseNumber(getStoredInitialRate(cls));
@@ -1064,6 +1079,37 @@
   });
 
   window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+
+  // GMレート手動修正モーダルを開く
+  window.openEditGMRateModal = (cls, currentVal) => {
+    document.getElementById('editRateClass').value = cls;
+    document.getElementById('gmRateModalTitle.innerHTML') = `✏️ ${cls} のGMレート修正`;
+    document.getElementById('manualRateInput').value = currentVal;
+    document.getElementById('editGMRateModal').classList.add('active');
+  };
+
+  // GMレート手動修正を保存（指定クラスのベース初期レートを調整して現在値合わせする）
+  window.saveGMRateEdit = () => {
+    const cls = document.getElementById('editRateClass').value;
+    const newVal = parseNumber(document.getElementById('manualRateInput').value);
+    if (newVal === null) return alert("有効な数値を入力してください");
+
+    // 該当クラスの現在の合計増減を計算し、新しくなる現在値から逆算して「新しいベース初期レート」を算出・保存する
+    const classMatches = matches.filter(m => m.isGM && m.myClass === cls);
+    const totalDelta = classMatches.reduce((sum, m) => sum + (parseNumber(m.rateChange) || 0), 0);
+    const newBaseRate = newVal - totalDelta;
+
+    setStoredInitialRate(newBaseRate, cls);
+
+    // もし現在フォームでそのクラスを選択中ならフォームの初期レート欄も更新
+    if (document.getElementById('myClass').value === cls) {
+      document.getElementById('initialRate').value = newBaseRate;
+    }
+
+    closeModal('editGMRateModal');
+    renderAll();
+    alert(`${cls} のGMレートを ${newVal}pt に更新しました！`);
+  };
 
   window.openEditModal = (id) => {
     const m = matches.find(x => x.id === id);
@@ -1212,9 +1258,9 @@
   document.getElementById('filterFormat').addEventListener('change', renderAll);
   document.getElementById('filterTurn').addEventListener('change', renderAll);
   document.getElementById('filterTag').addEventListener('input', renderAll);
-  document.getElementById('groupByTag').addEventListener('change', renderAll);
   document.getElementById('filterMyClass').addEventListener('change', renderAll);
   document.getElementById('filterMyType').addEventListener('input', renderAll);
+  document.getElementById('statsSortOrder').addEventListener('change', renderAll); // 並び替え変更時
 
   function renderAll() {
     updateSeasonDropdown();
@@ -1253,22 +1299,13 @@
     const rates = {}; const hasGM = {}; const deltas = {};
     ALL_CLASSES.forEach(c => { rates[c] = 0; hasGM[c] = false; deltas[c] = 0; });
 
-    // 各クラスごとに、GMの試合データを抽出してレート増減をすべて合算する
     ALL_CLASSES.forEach(cls => {
       const classMatches = data.filter(m => m.isGM && m.myClass === cls);
       if (classMatches.length > 0) {
         hasGM[cls] = true;
-        
-        // 最新の試合（配列の先頭、または一番新しいもの）を取得
         const latestMatch = classMatches[0];
-        
-        // このクラスの最新のベースとなる初期レートを優先的に取得
-        // 1. ローカルストレージに保存されている最新の初期レート
-        // 2. なければ最新試合に記録されている initialRate
         const storedBase = parseNumber(getStoredInitialRate(cls));
         const baseRate = storedBase !== null ? storedBase : (latestMatch.initialRate !== null ? latestMatch.initialRate : 0);
-        
-        // 該当クラスのすべての試合のレート増減（rateChange）の合計を計算
         const totalDelta = classMatches.reduce((sum, m) => sum + (parseNumber(m.rateChange) || 0), 0);
         
         rates[cls] = baseRate + totalDelta;
@@ -1279,8 +1316,11 @@
     ALL_CLASSES.forEach(c => {
       const deltaText = hasGM[c] ? `${deltas[c] > 0 ? '+' : ''}${deltas[c]}pt` : '';
       const deltaClass = hasGM[c] ? (deltas[c] > 0 ? 'delta-up' : deltas[c] < 0 ? 'delta-down' : 'delta-zero') : 'delta-zero';
+      const currentValStr = hasGM[c] ? rates[c] : 0;
+      
       board.innerHTML += `
         <div class="rate-card">
+          ${hasGM[c] ? `<button class="rate-edit-icon" onclick="openEditGMRateModal('${c}', ${currentValStr})" title="レート修正">✏️</button>` : ''}
           <div class="class-name">${c}</div>
           <div class="rate-val">${hasGM[c] ? rates[c] + 'pt' : '-'}</div>
           ${hasGM[c] ? `<div class="rate-delta ${deltaClass}">${deltaText}</div>` : ''}
@@ -1291,9 +1331,10 @@
   function renderStats(data) {
     const tbody = document.getElementById('statsTableBody');
     const summary = document.getElementById('statsSummary');
+    const sortOrder = document.getElementById('statsSortOrder').value;
     tbody.innerHTML = '';
-    const byTag = document.getElementById('groupByTag').value === 'true';
-
+    const byTag = false;
+    
     if (data.length === 0) {
       summary.innerHTML = '<span style="color:#888;">表示対象の戦績がありません</span>';
       tbody.innerHTML = '<tr><td colspan="6" style="color:#888;">データがありません</td></tr>';
@@ -1327,7 +1368,7 @@
       
       const key = `${myDeckName} vs ${oppDeckName}`;
 
-      if (!map[key]) map[key] = { my: myDeckName, opp: oppDeckName, win: 0, lose: 0, total: 0 };
+      if (!map[key]) map[key] = { my: myDeckName, opp: oppDeckName, oppClass: m.oppClass, win: 0, lose: 0, total: 0 };
       map[key].total++;
       if (m.result === 'WIN') map[key].win++; else map[key].lose++;
     });
@@ -1335,7 +1376,22 @@
     const list = Object.values(map).map(s => {
       s.winRate = Math.round((s.win / s.total) * 100);
       return s;
-    }).sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+    });
+
+    // 並び替えロジックの切り替え
+    if (sortOrder === 'winRate') {
+      // 勝率順（勝率が高い順、同率なら試合数が多い順）
+      list.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+    } else if (sortOrder === 'oppClass') {
+      // 相手のクラス順（クラスの配列順、同じクラス内なら勝率順）
+      const classOrder = ALL_CLASSES;
+      list.sort((a, b) => {
+        const indexA = classOrder.indexOf(a.oppClass);
+        const indexB = classOrder.indexOf(b.oppClass);
+        if (indexA !== indexB) return indexA - indexB;
+        return b.winRate - a.winRate;
+      });
+    }
 
     list.forEach(s => {
       let judge = '五分';
@@ -1394,9 +1450,7 @@
     const list = document.getElementById('tourneyList');
     list.innerHTML = tourneys.length === 0 ? '<div style="text-align:center; color:#888; padding:10px;">大会ログがありません</div>' : '';
     tourneys.forEach(t => {
-      // 修正: 開催日をブロック要素化し、大会名と重ならないように改行して配置
       const dateHTML = t.date ? `<div style="font-size:0.72rem; color:#888; font-weight:bold; margin-bottom:1px;">[${t.date}]</div>` : '';
-      
       const d1 = t.deck1 || t.deck || '未設定';
       const d2 = t.deck2 ? `<br>・デッキ2: ${t.deck2}` : '';
       const deckHTML = `<div style="font-size:0.75rem; color:#555; margin-top:2px;">使用デッキ:<br>・デッキ1: ${d1}${d2}</div>`;
