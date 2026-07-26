@@ -507,23 +507,13 @@
       <ul class="update-log-list">
         <li class="update-log-item">
           <span class="update-date">2026.07.26</span>
-          <strong>並び替え機能&GMレートの修正機能の追加</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">相性分析の並び替え機能を追加しました。「勝率順」「対戦相手のクラス＆デッキ順」で並び替えられます。GMレートの現在地を後から修正できるようにしました。</p>
+          <strong>GMレート計算・初期値保持の不具合修正</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">各クラスごとのGM初期レートの保存・連動と、対戦履歴編集時のレート再計算の挙動を修正しました。</p>
         </li>
         <li class="update-log-item">
           <span class="update-date">2026.07.25</span>
-          <strong>デフォルトデッキの追加</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">ロイヤルのデフォルトデッキを追加しました。</p>
-        </li>
-        <li class="update-log-item">
-          <span class="update-date">2026.07.24</span>
-          <strong>不具合修正</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートが正しく更新されない不具合を修正しました。</p>
-        </li>
-        <li class="update-log-item">
-          <span class="update-date">2026.07.23</span>
-          <strong>GM時のレート保持 & 絞り込み機能にクラスとデッキの追加</strong>
-          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">GM時のレートを最初に記載したレートと増減後のレートから計算し入力なしで反映されるよう改善しました。絞り込み機能にクラスとデッキを追加しました。</p>
+          <strong>絞り込み機能の内容追加</strong>
+          <p style="font-size: 0.75rem; color: #555; margin-top: 2px;">相性分析の絞り込み機能に相手のデッキとクラスを追加しました。</p>
         </li>
       </ul>
     </div>
@@ -542,7 +532,7 @@
       </div>
       <div class="footer-section">
         <h3>ℹ️ アプリ仕様</h3>
-        <p>バージョン: Ver 1.7.1</p>
+        <p>バージョン: Ver 1.7.3</p>
         <p>対応機能: ランク戦績記録 / GMレート集計 / 大会戦績管理 / デッキライブラリ </p>
       </div>
     </div>
@@ -786,14 +776,14 @@
 
   function getStoredInitialRate(cls) {
     if (!cls) cls = (document.getElementById('myClass') && document.getElementById('myClass').value) || '';
-    const perKey = cls ? `${gmInitialRateStorageKey}_${cls}` : gmInitialRateStorageKey;
-    return localStorage.getItem(perKey) || localStorage.getItem(gmInitialRateStorageKey) || localStorage.getItem('swb_initialRate') || '';
+    const perKey = `${gmInitialRateStorageKey}_${cls}`;
+    return localStorage.getItem(perKey) || '';
   }
 
   function setStoredInitialRate(value, cls) {
     const nextValue = value === null || value === '' ? '' : String(value);
     if (!cls) cls = (document.getElementById('myClass') && document.getElementById('myClass').value) || '';
-    const perKey = cls ? `${gmInitialRateStorageKey}_${cls}` : gmInitialRateStorageKey;
+    const perKey = `${gmInitialRateStorageKey}_${cls}`;
     localStorage.setItem(perKey, nextValue);
     return nextValue;
   }
@@ -810,8 +800,8 @@
     const initialRateEl = document.getElementById('initialRate');
     const curClass = (document.getElementById('myClass') && document.getElementById('myClass').value) || '';
     const storedInitialRate = getStoredInitialRate(curClass);
-    if (initialRateEl && storedInitialRate !== '') {
-      initialRateEl.value = storedInitialRate;
+    if (initialRateEl) {
+      initialRateEl.value = storedInitialRate !== '' ? storedInitialRate : '';
     }
 
     updateMyDeckDatalist();
@@ -822,7 +812,14 @@
     if (el) {
       const saveValue = (e) => {
         localStorage.setItem('swb_' + id, e.target.value);
-        if (id === 'myClass') updateMyDeckDatalist();
+        if (id === 'myClass') {
+          updateMyDeckDatalist();
+          const cls = document.getElementById('myClass').value;
+          const initialRateEl = document.getElementById('initialRate');
+          if (initialRateEl) {
+            initialRateEl.value = getStoredInitialRate(cls);
+          }
+        }
       };
       el.addEventListener('change', saveValue);
       el.addEventListener('input', saveValue);
@@ -990,19 +987,24 @@
       if (el) localStorage.setItem('swb_' + id, el.value);
     });
 
+    const cls = document.getElementById('myClass').value;
     const initialRateInput = document.getElementById('initialRate');
     const rateChangeInput = document.getElementById('rateChange');
     const initialRateVal = parseNumber(initialRateInput.value);
     const rateChangeVal = parseNumber(rateChangeInput.value);
 
     try {
-      const finalInitialRate = isGM.checked ? (initialRateVal !== null ? initialRateVal : parseNumber(getStoredInitialRate(document.getElementById('myClass').value)) || 0) : null;
+      if (isGM.checked && initialRateVal !== null) {
+        setStoredInitialRate(initialRateVal, cls);
+      }
+
+      const finalInitialRate = isGM.checked ? (initialRateVal !== null ? initialRateVal : parseNumber(getStoredInitialRate(cls)) || 0) : null;
 
       await addDoc(collection(db, "users", currentUser.uid, "matches"), {
         createdAt: new Date(),
         format: document.getElementById('formatInput').value,
         season: document.getElementById('seasonInput').value.trim() || '未設定',
-        myClass: document.getElementById('myClass').value,
+        myClass: cls,
         myType: document.getElementById('myType').value.trim(),
         myTag: document.getElementById('myTag').value.trim(),
         gemClass: isGM.checked ? "" : document.getElementById('gemClass').value,
@@ -1018,11 +1020,10 @@
       });
 
       if (isGM.checked) {
-        const cls = document.getElementById('myClass').value;
-        const baseInitialRate = initialRateVal !== null ? initialRateVal : parseNumber(getStoredInitialRate(cls));
-        const nextInitialRate = (baseInitialRate !== null ? baseInitialRate : 0) + (rateChangeVal !== null ? rateChangeVal : 0);
-        const persistedValue = setStoredInitialRate(nextInitialRate, cls);
-        initialRateInput.value = persistedValue;
+        const currentStoredBase = parseNumber(getStoredInitialRate(cls)) || 0;
+        const nextInitialRate = currentStoredBase + (rateChangeVal !== null ? rateChangeVal : 0);
+        setStoredInitialRate(nextInitialRate, cls);
+        initialRateInput.value = nextInitialRate;
       }
 
       document.getElementById('oppType').value = '';
@@ -1094,7 +1095,7 @@
     const newVal = parseNumber(document.getElementById('manualRateInput').value);
     if (newVal === null) return alert("有効な数値を入力してください");
 
-    const classMatches = matches.filter(m => m.isGM && m.myClass === cls);
+    const classMatches = [...matches].filter(m => m.isGM && m.myClass === cls).reverse();
     const totalDelta = classMatches.reduce((sum, m) => sum + (parseNumber(m.rateChange) || 0), 0);
     const newBaseRate = newVal - totalDelta;
 
@@ -1283,7 +1284,7 @@
     if (enemyClassFilter !== 'ALL') filtered = filtered.filter(m => m.oppClass === enemyClassFilter);
     if (enemyTypeFilter !== '') filtered = filtered.filter(m => (m.oppType || '').toLowerCase() === enemyTypeFilter.toLowerCase());
 
-    renderGMRates(filtered);
+    renderGMRates(matches);
     renderStats(filtered);
     renderHistory(filtered);
   }
@@ -1297,17 +1298,17 @@
     sel.value = cur;
   }
 
-  function renderGMRates(data) {
+  function renderGMRates(allData) {
     const board = document.getElementById('rateBoard');
     board.innerHTML = '';
     const rates = {}; const hasGM = {}; const deltas = {};
     ALL_CLASSES.forEach(c => { rates[c] = 0; hasGM[c] = false; deltas[c] = 0; });
 
     ALL_CLASSES.forEach(cls => {
-      const classMatches = data.filter(m => m.isGM && m.myClass === cls);
+      const classMatches = [...allData].filter(m => m.isGM && m.myClass === cls).reverse();
       if (classMatches.length > 0) {
         hasGM[cls] = true;
-        const latestMatch = classMatches[0];
+        const latestMatch = classMatches[classMatches.length - 1];
         const storedBase = parseNumber(getStoredInitialRate(cls));
         const baseRate = storedBase !== null ? storedBase : (latestMatch.initialRate !== null ? latestMatch.initialRate : 0);
         const totalDelta = classMatches.reduce((sum, m) => sum + (parseNumber(m.rateChange) || 0), 0);
@@ -1382,17 +1383,14 @@
       return s;
     });
 
-    // 並び替えロジック
     if (sortOrder === 'winRate') {
       list.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
     } else if (sortOrder === 'oppClass') {
-      // 相手のクラス＆デッキ順（相手クラス順 ＞ 相手デッキ名順）
       const classOrder = ALL_CLASSES;
       list.sort((a, b) => {
         const indexA = classOrder.indexOf(a.oppClass);
         const indexB = classOrder.indexOf(b.oppClass);
         if (indexA !== indexB) return indexA - indexB;
-        // 同じクラス内なら相手デッキ名（文字列）の五十音順で綺麗にまとめる
         if (a.oppType < b.oppType) return -1;
         if (a.oppType > b.oppType) return 1;
         return 0;
