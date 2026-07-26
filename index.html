@@ -1020,10 +1020,8 @@
       });
 
       if (isGM.checked) {
-        const currentStoredBase = parseNumber(getStoredInitialRate(cls)) || 0;
-        const nextInitialRate = currentStoredBase + (rateChangeVal !== null ? rateChangeVal : 0);
-        setStoredInitialRate(nextInitialRate, cls);
-        initialRateInput.value = nextInitialRate;
+        // 次回入力時の初期レートとして「この試合のレート入力値そのもの（または空欄）」を保持するように修正
+        setStoredInitialRate(rateChangeVal !== null ? rateChangeVal : '', cls);
       }
 
       document.getElementById('oppType').value = '';
